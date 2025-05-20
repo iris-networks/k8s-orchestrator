@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  k8sgo:
+    build: .
+    container_name: k8sgo
+    ports:
+      - "8080:8080"
+    volumes:
+      - ~/.kube:/root/.kube
+    environment:
+      - DOMAIN=local.dev
