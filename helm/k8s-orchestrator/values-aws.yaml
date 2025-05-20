@@ -1,0 +1,63 @@
+# AWS EKS specific values for k8s-orchestrator
+
+# Cloud provider configuration
+cloudProvider:
+  aws:
+    enabled: true
+    ingressClass: "alb"
+    annotations:
+      alb.ingress.kubernetes.io/scheme: "internet-facing"
+      alb.ingress.kubernetes.io/target-type: "ip"
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+      alb.ingress.kubernetes.io/ssl-redirect: "443"
+      external-dns.alpha.kubernetes.io/hostname: "api.your-domain.com"
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    storageClass: "gp2"
+  gcp:
+    enabled: false
+
+# Environment configuration
+env:
+  DOMAIN: "your-domain.com"
+  PORT: "8080"
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: "alb"  # Will be overridden by cloudProvider settings
+  hosts:
+    - host: api.your-domain.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: k8s-orchestrator-tls
+      hosts:
+        - api.your-domain.com
+
+# Resources
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 200m
+    memory: 256Mi
+
+# Autoscaling
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+
+# User environments
+userEnvironments:
+  defaultImage: "accetto/ubuntu-vnc-xfce-firefox-g3"
+  defaultPorts: [5901, 6901]
+  defaultVolumeSize: "5Gi"
+  storageClass: "gp2"  # Use AWS EBS gp2 storage class
+
+# Network policies
+networkPolicies:
+  enabled: true

@@ -1,0 +1,13 @@
+apiVersion: v2
+name: k8s-orchestrator
+description: A Helm chart for K8s Orchestrator service that creates isolated Kubernetes environments with VNC access
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - kubernetes
+  - vnc
+  - orchestration
+maintainers:
+  - name: K8s Orchestrator Team
+    email: support@example.com

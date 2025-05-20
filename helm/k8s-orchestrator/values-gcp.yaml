@@ -1,0 +1,63 @@
+# GCP GKE specific values for k8s-orchestrator
+
+# Cloud provider configuration
+cloudProvider:
+  aws:
+    enabled: false
+  gcp:
+    enabled: true
+    ingressClass: "nginx"
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-connect-timeout: "3600"
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+      nginx.ingress.kubernetes.io/websocket-services: "k8s-orchestrator"
+      external-dns.alpha.kubernetes.io/hostname: "api.your-domain.com"
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    storageClass: "standard-rwo"
+
+# Environment configuration
+env:
+  DOMAIN: "your-domain.com"
+  PORT: "8080"
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: "nginx"  # Will be overridden by cloudProvider settings
+  hosts:
+    - host: api.your-domain.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: k8s-orchestrator-tls
+      hosts:
+        - api.your-domain.com
+
+# Resources
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 200m
+    memory: 256Mi
+
+# Autoscaling
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+
+# User environments
+userEnvironments:
+  defaultImage: "accetto/ubuntu-vnc-xfce-firefox-g3"
+  defaultPorts: [5901, 6901]
+  defaultVolumeSize: "5Gi"
+  storageClass: "standard-rwo"  # Use GCP standard storage class
+
+# Network policies
+networkPolicies:
+  enabled: true
