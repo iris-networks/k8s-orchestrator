@@ -15,7 +15,7 @@ fullnameOverride: ""
 
 # Environment variables
 env:
-  DOMAIN: "local.dev"
+  DOMAIN: "pods.tryiris.dev"
   PORT: "8080"
 
 # Resource limits and requests
@@ -85,14 +85,14 @@ ingress:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
   hosts:
-    - host: api.local.dev
+    - host: api.pods.tryiris.dev
       paths:
         - path: /
           pathType: Prefix
   tls:
     - secretName: k8s-orchestrator-tls
       hosts:
-        - api.local.dev
+        - api.pods.tryiris.dev
 
 # RBAC configuration
 serviceAccount:

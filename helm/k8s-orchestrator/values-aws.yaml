@@ -10,7 +10,7 @@ cloudProvider:
       alb.ingress.kubernetes.io/target-type: "ip"
       alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
       alb.ingress.kubernetes.io/ssl-redirect: "443"
-      external-dns.alpha.kubernetes.io/hostname: "api.your-domain.com"
+      external-dns.alpha.kubernetes.io/hostname: "api.pods.tryiris.dev"
       cert-manager.io/cluster-issuer: "letsencrypt-prod"
     storageClass: "gp2"
   gcp:
@@ -18,7 +18,7 @@ cloudProvider:
 
 # Environment configuration
 env:
-  DOMAIN: "your-domain.com"
+  DOMAIN: "pods.tryiris.dev"
   PORT: "8080"
 
 # Ingress configuration
@@ -26,14 +26,14 @@ ingress:
   enabled: true
   className: "alb"  # Will be overridden by cloudProvider settings
   hosts:
-    - host: api.your-domain.com
+    - host: api.pods.tryiris.dev
       paths:
         - path: /
           pathType: Prefix
   tls:
     - secretName: k8s-orchestrator-tls
       hosts:
-        - api.your-domain.com
+        - api.pods.tryiris.dev
 
 # Resources
 resources:
