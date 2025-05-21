@@ -1,4 +1,4 @@
-.PHONY: build run clean swagger test
+.PHONY: build run clean swagger test docker-build docker-push docker-multiplatform
 
 # Default target
 all: build
@@ -27,3 +27,23 @@ swagger:
 test:
 	@echo "Running tests..."
 	@go test -v ./...
+
+# Build Docker image
+docker-build:
+	@echo "Building Docker image..."
+	docker build -t shanurcsenitap/irisk8s:latest .
+
+# Push Docker image to Docker Hub
+docker-push: docker-build
+	@echo "Pushing Docker image to Docker Hub..."
+	docker push shanurcsenitap/irisk8s:latest
+
+# Build and push multi-platform Docker image (linux/amd64, linux/arm64)
+docker-multiplatform:
+	@echo "Building and pushing multi-platform Docker image..."
+	@./scripts/build-push-multiplatform.sh
+
+# Build and push multi-platform Docker image with custom tag
+docker-multiplatform-tag:
+	@echo "Usage: make docker-multiplatform-tag TAG=<tag>"
+	@./scripts/build-push-multiplatform.sh --tag $${TAG:-latest}

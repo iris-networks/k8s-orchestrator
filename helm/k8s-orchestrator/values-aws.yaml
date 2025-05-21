@@ -35,6 +35,12 @@ ingress:
       hosts:
         - api.pods.tryiris.dev
 
+# Image configuration
+image:
+  repository: shanurcsenitap/irisk8s
+  pullPolicy: Always
+  tag: "latest"
+
 # Resources
 resources:
   limits:

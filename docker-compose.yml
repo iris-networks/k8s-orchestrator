@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   k8sgo:
-    build: .
+    image: shanurcsenitap/irisk8s:latest
     container_name: k8sgo
     ports:
       - "8080:8080"

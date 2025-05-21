@@ -5,8 +5,8 @@
 replicaCount: 2
 
 image:
-  repository: k8s-orchestrator
-  pullPolicy: IfNotPresent
+  repository: shanurcsenitap/irisk8s
+  pullPolicy: Always
   tag: "latest"
 
 imagePullSecrets: []

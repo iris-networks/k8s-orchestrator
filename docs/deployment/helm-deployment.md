@@ -31,6 +31,9 @@ cd helm/k8s-orchestrator
 # - Set appropriate resource limits
 # - Configure storage classes as needed
 
+# The Docker image is now hosted on Docker Hub as shanurcsenitap/irisk8s:latest
+# This is already configured in the values files
+
 # Install the chart with AWS values
 helm install k8s-orchestrator . -f values-aws.yaml
 ```
@@ -46,6 +49,9 @@ cd helm/k8s-orchestrator
 # - Set appropriate resource limits
 # - Configure storage classes as needed
 
+# The Docker image is now hosted on Docker Hub as shanurcsenitap/irisk8s:latest
+# This is already configured in the values files
+
 # Install the chart with GCP values
 helm install k8s-orchestrator . -f values-gcp.yaml
 ```
@@ -57,10 +63,10 @@ The Helm chart provides extensive configuration options through its values file.
 ### General Settings
 
 - `replicaCount`: Number of replicas of the orchestrator service
-- `image.repository`: Docker image repository
-- `image.tag`: Docker image tag
-- `image.pullPolicy`: Image pull policy
-- `env.DOMAIN`: Domain for user subdomains (e.g., "your-domain.com")
+- `image.repository`: Docker image repository (default: shanurcsenitap/irisk8s)
+- `image.tag`: Docker image tag (default: latest)
+- `image.pullPolicy`: Image pull policy (default: Always)
+- `env.DOMAIN`: Domain for user subdomains (e.g., "pods.tryiris.dev")
 
 ### Cloud Provider Settings
 

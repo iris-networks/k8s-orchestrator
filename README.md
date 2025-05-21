@@ -27,7 +27,15 @@ Each user environment includes:
 
 ## Installation
 
-### Clone the repository
+### Option 1: Use Docker Hub Image (Recommended)
+
+The application is available as a pre-built multi-platform Docker image on Docker Hub (supports linux/amd64 and linux/arm64):
+
+```bash
+docker pull shanurcsenitap/irisk8s:latest
+```
+
+### Option 2: Clone the repository
 
 ```bash
 git clone https://github.com/yourusername/k8sgo.git
@@ -38,6 +46,20 @@ cd k8sgo
 
 ```bash
 make build
+```
+
+### Build and push Docker images
+
+#### Build and push for a single platform:
+```bash
+make docker-build   # Build the Docker image
+make docker-push    # Build and push the Docker image to Docker Hub
+```
+
+#### Build and push multi-platform images (linux/amd64, linux/arm64):
+```bash
+make docker-multiplatform            # Build and push with the 'latest' tag
+make docker-multiplatform-tag TAG=v1.0.0  # Build and push with a custom tag
 ```
 
 ### Generate Swagger documentation
@@ -59,6 +81,39 @@ make run
 ```bash
 docker-compose up -d
 ```
+
+### Use pre-built Docker Hub image
+
+The application is available as a pre-built Docker image on Docker Hub:
+
+```bash
+docker pull shanurcsenitap/irisk8s:latest
+```
+
+You can also use this image directly in your docker-compose.yml or Kubernetes deployments.
+
+### Deploy with Helm (Recommended for Production)
+
+For Kubernetes deployments, we recommend using Helm:
+
+```bash
+# Navigate to the helm chart directory
+cd helm/k8s-orchestrator
+
+# For local development
+helm install k8s-orchestrator . -f values-local.yaml
+
+# For AWS EKS
+helm install k8s-orchestrator . -f values-aws.yaml
+
+# For GCP GKE
+helm install k8s-orchestrator . -f values-gcp.yaml
+```
+
+For detailed deployment instructions, see:
+- [Helm Deployment](docs/deployment/helm-deployment.md)
+- [AWS EKS Deployment](docs/deployment/aws-eks-deployment.md)
+- [GCP GKE Deployment](docs/deployment/gcp-gke-deployment.md)
 
 ## Local Development Setup
 

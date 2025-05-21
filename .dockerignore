@@ -1,0 +1,41 @@
+# Git
+.git
+.gitignore
+
+# Build artifacts
+bin/
+*.o
+*.a
+*.so
+
+# Temporary files
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Local development files
+.env
+.env.local
+*.log
+
+# IDE specific files
+.idea/
+.vscode/
+*.iml
+
+# Test files
+*_test.go
+testdata/
+
+# Documentation
+README.md
+LICENSE
+docs/deployment/
+
+# Other files that don't need to be in the Docker image
+helm/
+scripts/
+docker-compose.yml
+Makefile
+.dockerignore
