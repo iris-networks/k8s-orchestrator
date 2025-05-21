@@ -3,6 +3,12 @@
 # Docker Desktop / Minikube specific settings
 replicaCount: 1
 
+# Use the local image
+image:
+  repository: k8s-orchestrator
+  pullPolicy: Never
+  tag: "latest"
+
 # Cloud provider configuration - all disabled for local dev
 cloudProvider:
   aws:
