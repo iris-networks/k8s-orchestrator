@@ -1,0 +1,122 @@
+# GCP GKE Autopilot specific values for k8s-orchestrator
+
+# Deployment configuration for Autopilot
+replicaCount: 1
+
+# Image configuration
+image:
+  repository: shanurcsenitap/irisk8s
+  pullPolicy: Always
+  tag: "latest"
+
+# Resource configuration for Autopilot
+# Increased resources for better performance
+resources:
+  limits:
+    cpu: 1000m        # 1 CPU core
+    memory: 1024Mi    # 1 GB memory
+  requests:
+    cpu: 500m         # 0.5 CPU core
+    memory: 512Mi     # 512 MB memory
+
+# Autoscaling configuration for Autopilot
+# In Autopilot, node scaling is managed automatically
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+
+# Cloud provider configuration
+cloudProvider:
+  aws:
+    enabled: false
+  gcp:
+    enabled: true
+    ingressClass: "nginx"
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-connect-timeout: "3600"
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+      nginx.ingress.kubernetes.io/websocket-services: "k8s-orchestrator"
+      external-dns.alpha.kubernetes.io/hostname: "api.pods.tryiris.dev"
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    storageClass: "standard-rwo"
+
+# Environment configuration
+env:
+  DOMAIN: "pods.tryiris.dev"
+  PORT: "8080"
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    - host: api.pods.tryiris.dev
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: k8s-orchestrator-tls
+      hosts:
+        - api.pods.tryiris.dev
+
+# User environment configuration for Autopilot
+userEnvironments:
+  defaultImage: "accetto/ubuntu-vnc-xfce-firefox-g3"
+  defaultPorts: [5901, 6901]
+  defaultVolumeSize: "4Gi"     # Doubled from 2Gi to 4Gi for more space
+  storageClass: "standard-rwo"
+  # Resource configuration - Increased for better VNC performance
+  resources:
+    limits:
+      cpu: 1000m               # 1 CPU core
+      memory: 1024Mi           # 1 GB memory
+    requests:
+      cpu: 500m                # 0.5 CPU core
+      memory: 512Mi            # 512 MB memory
+
+# Network policies
+networkPolicies:
+  enabled: true
+
+# Resource quotas and limits for Autopilot cost control
+# Doubled resources for better performance
+resourceManagement:
+  enabled: true
+  clusterQuota:
+    cpu: "16"                # Increased from 8 to 16 cores
+    memory: 64Gi             # Increased from 32Gi to 64Gi
+    pods: 50
+  userQuota:
+    cpu: "4"                 # Increased from 2 to 4 cores per user
+    memory: 8Gi              # Increased from 4Gi to 8Gi per user
+    pods: 5
+  limitRanges:
+    enabled: true
+    default:
+      cpu: 1000m             # Increased from 500m to 1000m
+      memory: 1024Mi         # Increased from 512Mi to 1024Mi
+    defaultRequest:
+      cpu: 500m              # Increased from 250m to 500m
+      memory: 512Mi          # Increased from 256Mi to 512Mi
+    max:
+      cpu: "4"               # Increased from 2 to 4 cores
+      memory: 8Gi            # Increased from 4Gi to 8Gi
+
+# RBAC configuration
+rbac:
+  create: true
+  rules:
+    - apiGroups: [""]
+      resources: ["namespaces", "pods", "services", "persistentvolumeclaims", "resourcequotas", "limitranges"]
+      verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+    - apiGroups: ["apps"]
+      resources: ["deployments"]
+      verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+    - apiGroups: ["networking.k8s.io"]
+      resources: ["ingresses", "networkpolicies"]
+      verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]

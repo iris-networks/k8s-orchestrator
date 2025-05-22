@@ -62,6 +62,89 @@ Before you begin, ensure you have the following:
 - `helm` (v3.2.0+) installed
 - Domain name: tryiris.dev with pods.tryiris.dev for user environments
 
+### Installing Required Tools
+
+#### Install gcloud CLI
+
+If you haven't installed the Google Cloud SDK:
+
+```bash
+# Download and install the Google Cloud SDK
+curl https://sdk.cloud.google.com | bash
+exec -l $SHELL
+gcloud init  # Follow the initialization steps
+```
+
+#### Install kubectl
+
+You have three options to install kubectl:
+
+##### Option 1: Install using our script (Recommended)
+
+We provide a script that automatically detects your server version and installs the compatible kubectl:
+
+```bash
+# Download the script
+curl -LO https://raw.githubusercontent.com/iris-networks/k8s-orchestrator/master/scripts/install_kubectl.sh
+
+# Make it executable
+chmod +x install_kubectl.sh
+
+# Run the script
+./install_kubectl.sh
+```
+
+This script will:
+- Detect your OS and architecture
+- Check your current server version (if possible)
+- Download and install the matching kubectl version
+- Add it to your PATH if necessary
+
+##### Option 2: Install via gcloud CLI
+
+You can install kubectl through the gcloud CLI:
+
+```bash
+# Install kubectl via Google Cloud SDK
+gcloud components install kubectl
+
+# Verify the installation
+kubectl version --client
+```
+
+##### Option 3: Manual installation
+
+**For macOS:**
+```bash
+# Using Homebrew
+brew install kubectl
+
+# Or using curl (replace X.Y.Z with your server version)
+curl -LO "https://dl.k8s.io/release/vX.Y.Z/bin/darwin/amd64/kubectl"
+chmod +x ./kubectl
+sudo mv ./kubectl /usr/local/bin/kubectl
+```
+
+**For Linux:**
+```bash
+# Download the binary (replace X.Y.Z with your server version)
+curl -LO "https://dl.k8s.io/release/vX.Y.Z/bin/linux/amd64/kubectl"
+chmod +x kubectl
+sudo mv kubectl /usr/local/bin/kubectl
+```
+
+> **Important**: For optimal compatibility, make sure your kubectl version is within one minor version of your cluster's version (e.g., v1.31.x client works with v1.32.x server).
+
+#### Install Helm
+
+```bash
+# For macOS (using Homebrew)
+brew install helm
+
+# For Linux
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+```
+
 ## Deployment Process Flow
 
 ```mermaid
@@ -102,8 +185,17 @@ exec -l $SHELL
 # Login to your Google Cloud account
 gcloud auth login
 
-# Set your project ID
+# List available projects
+gcloud projects list
+
+# Set your project ID (use the PROJECT_ID from the list, not the PROJECT_NUMBER)
 gcloud config set project YOUR_PROJECT_ID
+
+# Set the quota project for Application Default Credentials (important for billing)
+gcloud auth application-default set-quota-project YOUR_PROJECT_ID
+
+# Verify your configuration
+gcloud config list
 ```
 
 ### Enable Required APIs
@@ -113,23 +205,77 @@ gcloud config set project YOUR_PROJECT_ID
 gcloud services enable container.googleapis.com
 ```
 
-### Create a GKE Cluster
+### Create a GKE Autopilot Cluster
+
+Create a GKE Autopilot cluster in Singapore region:
 
 ```bash
-# Create a GKE cluster with 3 nodes
-gcloud container clusters create k8s-orchestrator \
-  --region us-central1 \
-  --num-nodes=3 \
-  --machine-type=e2-standard-4 \
+# Create a GKE Autopilot cluster in Singapore region
+gcloud container clusters create-auto k8s-orchestrator \
+  --region asia-southeast1 \
   --release-channel=regular
 ```
 
-### Configure kubectl to Use the GKE Cluster
+Autopilot automatically manages the infrastructure, including:
+- Node provisioning and scaling
+- Security and node upgrades
+- Resource optimization
+
+### Set Resource Quotas
+
+After cluster creation, set resource quotas to limit usage and costs:
 
 ```bash
-# Get credentials for your GKE cluster
-gcloud container clusters get-credentials k8s-orchestrator --region us-central1
+# Create a cluster-wide resource quota to prevent unexpected billing
+kubectl create -f - <<EOF
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: cluster-resource-quota
+  namespace: default
+spec:
+  hard:
+    requests.cpu: "8"      # Maximum 8 cores across the entire cluster
+    requests.memory: 32Gi  # Maximum 32GB memory across the entire cluster
+    limits.cpu: "16"       # Maximum burst capacity of 16 cores
+    limits.memory: 64Gi    # Maximum burst capacity of 64GB memory
+    pods: "50"             # Maximum 50 pods total
+EOF
 ```
+
+### Configure kubectl to Use the GKE Autopilot Cluster
+
+After creating your cluster for the first time, you need to get the Kubernetes credentials:
+
+```bash
+# Get credentials for your GKE Autopilot cluster
+# This configures kubectl to use your new cluster
+gcloud container clusters get-credentials k8s-orchestrator --region asia-southeast1
+```
+
+This command:
+1. Downloads the cluster's credentials
+2. Creates or updates your kubeconfig file (~/.kube/config)
+3. Sets your current context to the new cluster
+
+Verify that kubectl is properly configured:
+
+```bash
+# Check if kubectl is properly configured
+kubectl cluster-info
+
+# View your current context
+kubectl config current-context
+
+# List all nodes in your cluster
+kubectl get nodes
+```
+
+If these commands succeed, you're ready to proceed. If you encounter any errors, make sure:
+- You're logged in with gcloud (`gcloud auth login`)
+- The cluster creation has completed
+- You're using the correct project ID
+
 
 ## 2. Setting Up Core Kubernetes Components
 
@@ -249,97 +395,42 @@ graph TD
     Secret --> Pod
 ```
 
-### Customize the values-gcp.yaml File
+### Use the Prepared Autopilot Values File
 
-Navigate to the Helm chart directory:
+We've created a ready-to-use values file for GKE Autopilot deployments. Navigate to the Helm chart directory and use the pre-configured file:
 
 ```bash
 cd helm/k8s-orchestrator
+
+# The values-gcp-autopilot.yaml file is already configured for Autopilot deployments
+# If you want to examine it:
+cat values-gcp-autopilot.yaml
+
+# If you need to make any customizations, use:
+# vim values-gcp-autopilot.yaml
+# or
+# nano values-gcp-autopilot.yaml
 ```
 
-Edit the `values-gcp.yaml` file to match your deployment:
+The pre-configured `values-gcp-autopilot.yaml` includes:
 
-```yaml
-# Deployment configuration
-replicaCount: 2
+1. **Enhanced resource allocations** for better performance:
+   - 1 CPU core (1000m) limit and 0.5 CPU core (500m) request for the orchestrator
+   - 1GB memory limit and 512MB memory request
+   - Doubled VNC container resources for smoother user experience
+   - 4GB persistent volume size for user environments
 
-image:
-  repository: shanurcsenitap/irisk8s
-  tag: latest
-  pullPolicy: Always
+2. **Optimized resource quotas**:
+   - 16 CPU cores total cluster capacity
+   - 64GB memory total cluster capacity
+   - 4 CPU cores per user environment
+   - 8GB memory per user environment
 
-# Resource limits
-resources:
-  limits:
-    cpu: 1000m
-    memory: 1Gi
-  requests:
-    cpu: 500m
-    memory: 512Mi
+3. **Optimized autoscaling settings**
+4. **Properly configured RBAC permissions**
+5. **Network policies for security**
 
-# Autoscaling configuration
-autoscaling:
-  enabled: true
-  minReplicas: 2
-  maxReplicas: 5
-  targetCPUUtilizationPercentage: 80
-
-# Cloud provider specific settings
-cloudProvider:
-  gcp:
-    enabled: true
-    ingressClass: "nginx"
-    annotations:
-      nginx.ingress.kubernetes.io/proxy-connect-timeout: "3600"
-      nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
-      nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
-      cert-manager.io/cluster-issuer: "letsencrypt-prod"
-    storageClass: "standard-rwo"
-
-# Environment variables
-env:
-  DOMAIN: "pods.tryiris.dev"  # Domain for user environments
-
-# Ingress configuration
-ingress:
-  enabled: true
-  className: "nginx"
-  annotations:
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-  hosts:
-    - host: api.pods.tryiris.dev
-      paths:
-        - path: /
-          pathType: Prefix
-  tls:
-    - secretName: k8s-orchestrator-tls
-      hosts:
-        - api.pods.tryiris.dev
-
-# User environment configuration
-userEnvironments:
-  defaultImage: "accetto/ubuntu-vnc-xfce-firefox-g3"
-  defaultPorts: [5901, 6901]
-  defaultVolumeSize: "5Gi"
-
-# Network policies
-networkPolicies:
-  enabled: true
-
-# RBAC configuration
-rbac:
-  create: true
-  rules:
-    - apiGroups: [""]
-      resources: ["namespaces", "pods", "services", "persistentvolumeclaims"]
-      verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-    - apiGroups: ["apps"]
-      resources: ["deployments"]
-      verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-    - apiGroups: ["networking.k8s.io"]
-      resources: ["ingresses", "networkpolicies"]
-      verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-```
+The values file is optimized for performance while maintaining cost control.
 
 ### Install the Helm Chart
 
@@ -347,8 +438,8 @@ rbac:
 # Make sure you're in the helm chart directory
 cd helm/k8s-orchestrator
 
-# Install the chart
-helm install k8s-orchestrator . -f values-gcp.yaml
+# Install the chart using the Autopilot values file
+helm install k8s-orchestrator . -f values-gcp-autopilot.yaml
 ```
 
 ## 5. Verifying the Deployment
@@ -411,14 +502,53 @@ sequenceDiagram
 
 ```bash
 # Create a user environment via the API
+# Note: In Autopilot, resource requests are required for all pods
 curl -X POST https://api.pods.tryiris.dev/environments \
   -H "Content-Type: application/json" \
   -d '{
     "username": "testuser",
     "image": "accetto/ubuntu-vnc-xfce-firefox-g3",
-    "ports": [3000, 6901]
+    "ports": [3000, 6901],
+    "resources": {
+      "requests": {
+        "cpu": "250m",
+        "memory": "256Mi"
+      },
+      "limits": {
+        "cpu": "500m",
+        "memory": "512Mi"
+      }
+    }
   }'
 ```
+
+#### Resource Allocation in Autopilot
+
+Autopilot charges based on the resources requested by pods. Here's a breakdown of resource classes and approximate costs:
+
+| Resource Class | vCPU       | Memory     | Approximate Cost* |
+|---------------|------------|------------|-------------------|
+| Small         | 0.25 - 1   | 0.5 - 4 GB | $40-60/mo         |
+| Medium        | 1 - 4      | 4 - 16 GB  | $150-250/mo       |
+| Large         | 4 - 8      | 16 - 32 GB | $500-900/mo       |
+
+*Costs are approximate and vary by region
+
+##### Our Enhanced VNC Environment Resources
+
+For VNC environments, we've configured resources for better performance:
+
+```yaml
+resources:
+  requests:
+    cpu: 500m        # 0.5 vCPU
+    memory: 512Mi    # 512 MB RAM
+  limits:
+    cpu: 1000m       # 1 vCPU
+    memory: 1024Mi   # 1 GB RAM
+```
+
+This configuration provides a good balance of performance and cost. With our resource quotas, each user environment can scale up to 4 CPU cores and 8GB memory if needed.
 
 ### Access the User Environment
 
@@ -451,14 +581,108 @@ kubectl get ingress -n user-testuser
 
 ## 7. Scaling and Managing the Deployment
 
+### Cost Control in Autopilot
+
+In Autopilot mode, you can't directly control node count, but you can control costs through the following methods:
+
+#### 1. ResourceQuotas
+
+We always use ResourceQuotas to limit total CPU and memory usage:
+
+```bash
+# We already created a default ResourceQuota during cluster setup
+# For each user namespace, we add an additional ResourceQuota to limit their resources:
+kubectl create -f - <<EOF
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: user-compute-resources
+  namespace: user-environment-namespace
+spec:
+  hard:
+    requests.cpu: "2"      # Maximum 2 cores per user
+    requests.memory: 4Gi   # Maximum 4GB memory per user
+    limits.cpu: "4"        # Maximum 4 cores burst per user
+    limits.memory: 8Gi     # Maximum 8GB memory burst per user
+    pods: "5"              # Maximum 5 pods per user
+EOF
+```
+
+Check existing quotas:
+
+```bash
+kubectl get resourcequota --all-namespaces
+```
+
+#### 2. LimitRanges
+
+We apply LimitRanges to every namespace to enforce resource constraints:
+
+```bash
+# Apply a LimitRange to each user namespace to ensure all containers have appropriate limits
+kubectl create -f - <<EOF
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: default-limits
+  namespace: user-environment-namespace
+spec:
+  limits:
+  - default:
+      cpu: 500m         # Default limit of 0.5 cores
+      memory: 512Mi     # Default limit of 512MB RAM
+    defaultRequest:
+      cpu: 250m         # Default request of 0.25 cores
+      memory: 256Mi     # Default request of 256MB RAM
+    max:
+      cpu: "2"          # Maximum of 2 cores per container
+      memory: 4Gi       # Maximum of 4GB RAM per container
+    min:
+      cpu: 100m         # Minimum of 0.1 cores per container
+      memory: 64Mi      # Minimum of 64MB RAM per container
+    type: Container
+EOF
+```
+
+Verify the LimitRange:
+
+```bash
+kubectl get limitrange -n user-environment-namespace
+```
+
+#### 3. Pod Resource Specifications
+
+Always set appropriate requests/limits in pod specs for all deployments.
+
+#### 4. Budget Notifications
+
+We always set up Google Cloud budget alerts:
+
+```bash
+# Get your billing account ID
+gcloud billing accounts list
+```
+
+```bash
+# Set up a budget alert via gcloud (REQUIRED for all clusters)
+gcloud billing budgets create \
+  --billing-account=YOUR_BILLING_ACCOUNT_ID \
+  --display-name="GKE Budget - k8s-orchestrator" \
+  --budget-amount=500 \
+  --threshold-rules=threshold-percent=0.5,basis=current_spend \
+  --threshold-rules=threshold-percent=0.8,basis=current_spend \
+  --threshold-rules=threshold-percent=1.0,basis=current_spend \
+  --email=your-team-email@tryiris.dev
+```
+
 ### Scaling the Orchestrator Service
 
 ```bash
-# Scale the deployment manually
+# Scale the deployment manually (pod count only in Autopilot)
 kubectl scale deployment k8s-orchestrator --replicas=3
 
 # Or update the Helm values and upgrade
-helm upgrade k8s-orchestrator . -f values-gcp.yaml
+helm upgrade k8s-orchestrator . -f values-gcp-autopilot.yaml
 ```
 
 ### Upgrading the Deployment
@@ -469,12 +693,70 @@ docker pull shanurcsenitap/irisk8s:latest
 
 # Update your values file if needed
 # Then upgrade the Helm release
-helm upgrade k8s-orchestrator . -f values-gcp.yaml
+helm upgrade k8s-orchestrator . -f values-gcp-autopilot.yaml
 ```
 
 ## 8. Troubleshooting
 
 ### Common Issues and Solutions
+
+#### Autopilot-Specific Issues
+
+If you encounter issues with GKE Autopilot:
+
+```bash
+# Error: Pod scheduling failure due to resource requirements
+# Solution: Ensure all pods have resource requests set
+kubectl describe pod [pod-name]  # Check for resource-related events
+
+# Error: Unsupported features in Autopilot
+# Solution: Check Autopilot limitations
+# Common limitations:
+# - DaemonSets require special permissions
+# - Local persistent volumes are not supported
+# - Some privileged operations are restricted
+# - Custom node configurations are not available
+gcloud container clusters describe k8s-orchestrator --region asia-southeast1 | grep autopilot
+
+# Switch to Standard mode if Autopilot limitations are too restrictive
+gcloud container clusters update k8s-orchestrator --region asia-southeast1 --no-enable-autopilot
+```
+
+#### Kubectl Version Mismatch Issues
+
+If you encounter errors related to kubectl version incompatibility:
+
+```bash
+# Error: "WARNING: version difference between client (X.Y) and server (A.B) exceeds the supported minor version skew of +/-1"
+# Solution: Install the compatible kubectl version using our script
+
+# Download our script
+curl -LO https://raw.githubusercontent.com/iris-networks/k8s-orchestrator/master/scripts/install_kubectl.sh
+
+# Make it executable and run it
+chmod +x install_kubectl.sh
+./install_kubectl.sh
+```
+
+#### Project ID and Quota Issues
+
+If you encounter errors related to project ID or quota:
+
+```bash
+# Error: The value of ``core/project'' property is set to project number
+# Solution: Set the project ID (not number)
+gcloud projects list  # Get the PROJECT_ID
+gcloud config set project YOUR_PROJECT_ID  # Use the ID, not the number
+
+# Error: Quota issues or unexpected billing
+# Solution: Set the quota project
+gcloud auth application-default set-quota-project YOUR_PROJECT_ID
+
+# Error: Authentication issues
+# Solution: Re-login and select the correct account
+gcloud auth login
+gcloud config set account YOUR_EMAIL@DOMAIN.COM
+```
 
 #### Ingress Issues
 
