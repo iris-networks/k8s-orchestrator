@@ -56,7 +56,7 @@ Before you begin, ensure you have the following:
 - `gcloud` CLI installed and configured
 - `kubectl` installed
 - `helm` (v3.2.0+) installed
-- A domain name for your service
+- Domain name: tryiris.dev with pods.tryiris.dev for user environments
 
 ## Deployment Process Flow
 
@@ -172,7 +172,7 @@ metadata:
 spec:
   acme:
     server: https://acme-v02.api.letsencrypt.org/directory
-    email: your-email@example.com
+    email: admin@tryiris.dev
     privateKeySecretRef:
       name: letsencrypt-prod
     solvers:
@@ -184,19 +184,18 @@ spec:
 Apply the configuration:
 
 ```bash
-# Update the email address in the file
-sed -i 's/your-email@example.com/your-actual-email@example.com/' letsencrypt-prod.yaml
+# The email is already set to admin@tryiris.dev
 
 # Apply the ClusterIssuer
 kubectl apply -f letsencrypt-prod.yaml
 ```
 
-## 3. Configuring DNS for Your Domain
+## 3. Configuring DNS for tryiris.dev
 
 ### Set Up Cloud DNS
 
 ```bash
-# Create a DNS zone for your domain (if not already created)
+# Create a DNS zone for tryiris.dev (if not already created)
 gcloud dns managed-zones create k8s-orchestrator \
   --dns-name=tryiris.dev. \
   --description="DNS zone for K8s Orchestrator"
@@ -206,7 +205,7 @@ gcloud dns managed-zones describe k8s-orchestrator \
   --format="value(nameServers)"
 ```
 
-Configure your domain registrar to use the nameservers provided by Cloud DNS.
+Configure the tryiris.dev domain registrar to use the nameservers provided by Cloud DNS.
 
 ### Create DNS Records
 
