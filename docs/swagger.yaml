@@ -1,0 +1,82 @@
+definitions:
+  api.ErrorResponse:
+    description: Standard API error response
+    properties:
+      error:
+        description: Error message
+        example: User ID is required
+        type: string
+    type: object
+  api.Response:
+    description: Standard API success response
+    properties:
+      message:
+        description: Response message
+        example: Sandbox created successfully
+        type: string
+      userId:
+        description: User ID
+        example: user123
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /v1/sandbox/{userId}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a containerized sandbox for a specific user
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Delete a user sandbox
+      tags:
+      - sandbox
+    post:
+      consumes:
+      - application/json
+      description: Creates a new containerized sandbox for a specific user
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Create a user sandbox
+      tags:
+      - sandbox
+swagger: "2.0"
