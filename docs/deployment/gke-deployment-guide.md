@@ -81,17 +81,20 @@ You have three options to install kubectl:
 
 ##### Option 1: Install using our script (Recommended)
 
-We provide a script that automatically detects your server version and installs the compatible kubectl:
+We provide a script that automatically detects your server version and installs the compatible kubectl. The script is included in the repository at `scripts/install_kubectl.sh`.
 
 ```bash
-# Download the script
-curl -LO https://raw.githubusercontent.com/iris-networks/k8s-orchestrator/master/scripts/install_kubectl.sh
+# Navigate to the repository root
+cd /path/to/k8s-orchestrator
+
+# Copy the script to your desired location
+cp scripts/install_kubectl.sh ~/install_kubectl.sh
 
 # Make it executable
-chmod +x install_kubectl.sh
+chmod +x ~/install_kubectl.sh
 
 # Run the script
-./install_kubectl.sh
+~/install_kubectl.sh
 ```
 
 This script will:
@@ -730,12 +733,14 @@ If you encounter errors related to kubectl version incompatibility:
 # Error: "WARNING: version difference between client (X.Y) and server (A.B) exceeds the supported minor version skew of +/-1"
 # Solution: Install the compatible kubectl version using our script
 
-# Download our script
-curl -LO https://raw.githubusercontent.com/iris-networks/k8s-orchestrator/master/scripts/install_kubectl.sh
+# Navigate to the repository root
+cd /path/to/k8s-orchestrator
 
-# Make it executable and run it
-chmod +x install_kubectl.sh
-./install_kubectl.sh
+# Run the script directly
+bash scripts/install_kubectl.sh
+
+# Or copy it to your home directory first
+# cp scripts/install_kubectl.sh ~/install_kubectl.sh && chmod +x ~/install_kubectl.sh && ~/install_kubectl.sh
 ```
 
 #### Project ID and Quota Issues
