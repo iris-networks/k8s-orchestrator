@@ -304,17 +304,27 @@ kubectl wait --namespace ingress-nginx \
 # Install cert-manager
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml
 
-# Wait for cert-manager to be ready - this waits for the controller
+# Wait for cert-manager components to be ready
+echo "Waiting for cert-manager controller to be ready..."
 kubectl wait --namespace cert-manager \
   --for=condition=ready pod \
   --selector=app.kubernetes.io/component=controller \
   --timeout=120s
 
-# Wait for the webhook to be ready - important to avoid webhook errors
+echo "Waiting for cert-manager webhook to be ready..."
 kubectl wait --namespace cert-manager \
   --for=condition=ready pod \
   --selector=app.kubernetes.io/component=webhook \
   --timeout=120s
+
+echo "Waiting for cert-manager cainjector to be ready..."
+kubectl wait --namespace cert-manager \
+  --for=condition=ready pod \
+  --selector=app.kubernetes.io/component=cainjector \
+  --timeout=120s
+
+# Verify all cert-manager pods are running
+kubectl get pods -n cert-manager
 
 # Additional delay to ensure the webhook API is fully registered
 echo "Waiting 30 seconds for cert-manager webhook to fully initialize..."
@@ -809,11 +819,13 @@ kubectl wait --namespace cert-manager \
   --timeout=120s
 sleep 30  # Allow time for the API registration to complete
 
-# Check cert-manager logs
+# Check cert-manager component logs
 kubectl logs -n cert-manager -l app.kubernetes.io/component=controller
-
-# Check webhook logs for errors
 kubectl logs -n cert-manager -l app.kubernetes.io/component=webhook
+kubectl logs -n cert-manager -l app.kubernetes.io/component=cainjector
+
+# Check if all cert-manager pods are running
+kubectl get pods -n cert-manager
 
 # Check certificate status
 kubectl get certificates -A
