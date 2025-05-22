@@ -15,33 +15,37 @@ graph TD
                 API --> SubdomainManager[Subdomain Manager]
                 API --> VolManager[Volume Manager]
             end
-            
+
             subgraph "User Environment 1"
-                VNC1[VNC Container]
+                Container1[Container<br>Web Server + VNC]
                 PVC1[Persistent Volume]
-                VNC1 --- PVC1
+                Container1 --- PVC1
             end
-            
+
             subgraph "User Environment 2"
-                VNC2[VNC Container]
+                Container2[Container<br>Web Server + VNC]
                 PVC2[Persistent Volume]
-                VNC2 --- PVC2
+                Container2 --- PVC2
             end
-            
-            K8sClient --> VNC1
-            K8sClient --> VNC2
+
+            K8sClient --> Container1
+            K8sClient --> Container2
             VolManager --> PVC1
             VolManager --> PVC2
-            SubdomainManager --> Ingress
+            SubdomainManager --> Ingress3000[Ingress Port 3000]
+            SubdomainManager --> Ingress6901[Ingress Port 6901]
         end
-        
-        DNS[Cloud DNS] --- Ingress
+
+        DNS[Cloud DNS] --- Ingress3000
+        DNS --- Ingress6901
     end
-    
-    User1[User 1] -->|https://user1.yourdomain.com| Ingress
-    User2[User 2] -->|https://user2.yourdomain.com| Ingress
-    
-    Admin[Administrator] -->|https://api.yourdomain.com| API
+
+    User1Web[User 1 Web] -->|https://user1.pods.tryiris.dev:3000| Ingress3000
+    User1VNC[User 1 VNC] -->|https://user1.pods.tryiris.dev:6901| Ingress6901
+    User2Web[User 2 Web] -->|https://user2.pods.tryiris.dev:3000| Ingress3000
+    User2VNC[User 2 VNC] -->|https://user2.pods.tryiris.dev:6901| Ingress6901
+
+    Admin[Administrator] -->|https://api.pods.tryiris.dev| API
 ```
 
 ## Prerequisites
@@ -192,9 +196,9 @@ kubectl apply -f letsencrypt-prod.yaml
 ### Set Up Cloud DNS
 
 ```bash
-# Create a DNS zone for your domain
+# Create a DNS zone for your domain (if not already created)
 gcloud dns managed-zones create k8s-orchestrator \
-  --dns-name=yourdomain.com. \
+  --dns-name=tryiris.dev. \
   --description="DNS zone for K8s Orchestrator"
 
 # Get the nameservers assigned to your zone
@@ -213,12 +217,12 @@ Wait until after deployment to create these records, as you'll need the Ingress 
 INGRESS_IP=$(kubectl get service -n ingress-nginx ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 
 # Create an A record for the API
-gcloud dns record-sets create api.yourdomain.com. \
+gcloud dns record-sets create api.pods.tryiris.dev. \
   --type=A --ttl=300 --zone=k8s-orchestrator \
   --rrdatas=$INGRESS_IP
 
-# Create a wildcard A record for user subdomains
-gcloud dns record-sets create "*.yourdomain.com." \
+# Create a wildcard A record for user pods subdomains
+gcloud dns record-sets create "*.pods.tryiris.dev." \
   --type=A --ttl=300 --zone=k8s-orchestrator \
   --rrdatas=$INGRESS_IP
 ```
@@ -304,7 +308,7 @@ cloudProvider:
 
 # Environment variables
 env:
-  DOMAIN: "yourdomain.com"  # Replace with your domain
+  DOMAIN: "pods.tryiris.dev"  # Domain for user environments
 
 # Ingress configuration
 ingress:
@@ -313,14 +317,14 @@ ingress:
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
   hosts:
-    - host: api.yourdomain.com  # Replace with your domain
+    - host: api.pods.tryiris.dev
       paths:
         - path: /
           pathType: Prefix
   tls:
     - secretName: k8s-orchestrator-tls
       hosts:
-        - api.yourdomain.com  # Replace with your domain
+        - api.pods.tryiris.dev
 
 # User environment configuration
 userEnvironments:
@@ -391,18 +395,24 @@ sequenceDiagram
     participant K8s as Kubernetes API
     participant DNS as DNS
     participant User as End User
-    
+
     Admin->>API: POST /environments (username: "user1")
     API->>K8s: Create Namespace
     API->>K8s: Create PVC
-    API->>K8s: Create Deployment (VNC)
+    API->>K8s: Create Deployment (VNC + Web Server)
     API->>K8s: Create Service
-    API->>K8s: Create Ingress
+    API->>K8s: Create Ingress for Port 3000
+    API->>K8s: Create Ingress for Port 6901
     API->>DNS: Configure Subdomain
     API->>Admin: Return Success
-    User->>DNS: Request user1.yourdomain.com
-    DNS->>K8s: Route to Ingress
-    K8s->>User: Serve VNC Interface
+
+    User->>DNS: Request user1.tryiris.dev:3000
+    DNS->>K8s: Route to Web Server
+    K8s->>User: Serve Web Application
+
+    User->>DNS: Request user1.tryiris.dev:6901
+    DNS->>K8s: Route to VNC Interface
+    K8s->>User: Serve VNC Desktop
 ```
 
 ## 6. Creating and Accessing User Environments
@@ -411,19 +421,27 @@ sequenceDiagram
 
 ```bash
 # Create a user environment via the API
-curl -X POST https://api.yourdomain.com/environments \
+curl -X POST https://api.pods.tryiris.dev/environments \
   -H "Content-Type: application/json" \
   -d '{
     "username": "testuser",
     "image": "accetto/ubuntu-vnc-xfce-firefox-g3",
-    "ports": [5901, 6901]
+    "ports": [3000, 6901]
   }'
 ```
 
-### Access the VNC Environment
+### Access the User Environment
 
-1. VNC Web Interface: Open your browser and navigate to https://testuser.yourdomain.com:6901
-2. VNC Client: Connect to testuser.yourdomain.com:5901 using a VNC client
+The user environment provides two main interfaces, both accessible via HTTPS:
+
+1. **Web Server (Port 3000)**: Access the user's web server
+   - URL: `https://testuser.pods.tryiris.dev:3000`
+   - This is where the user's web application is served
+
+2. **VNC Web Interface (Port 6901)**: Access the VNC desktop environment
+   - URL: `https://testuser.pods.tryiris.dev:6901`
+   - Provides a web-based VNC interface to the virtual desktop
+   - Credentials are typically `headless:headless` (default for the VNC image)
 
 ### Verify the Created Resources
 

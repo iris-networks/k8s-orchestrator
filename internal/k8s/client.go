@@ -78,7 +78,7 @@ func (c *Client) CreateEnvironment(req models.EnvironmentRequest) (*models.Envir
 	}
 
 	// 5. Create ingress
-	err = c.createIngress(req.Username, namespace, req.Ports[0])
+	err = c.createIngress(req.Username, namespace, req.Ports)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ingress: %v", err)
 	}
@@ -93,7 +93,7 @@ func (c *Client) CreateEnvironment(req models.EnvironmentRequest) (*models.Envir
 		VolumeMounts: req.VolumeMounts,
 		Env:          req.Env,
 		Status:       "Running",
-		URL:          fmt.Sprintf("http://%s.%s", req.Username, c.domain),
+		URL:          fmt.Sprintf("https://%s.%s", req.Username, c.domain),
 		CreatedAt:    time.Now().Format(time.RFC3339),
 	}, nil
 }
@@ -165,7 +165,7 @@ func (c *Client) ListEnvironments() ([]models.Environment, error) {
 			VolumeSize: volumeSize,
 			Env:        env,
 			Status:     string(deployment.Status.Conditions[0].Type),
-			URL:        fmt.Sprintf("http://%s.%s", username, c.domain),
+			URL:        fmt.Sprintf("https://%s.%s", username, c.domain),
 			CreatedAt:  ns.CreationTimestamp.Format(time.RFC3339),
 		}
 
@@ -242,7 +242,7 @@ func (c *Client) GetEnvironment(username string) (*models.Environment, error) {
 		VolumeMounts: volumeMounts,
 		Env:          env,
 		Status:       string(deployment.Status.Conditions[0].Type),
-		URL:          fmt.Sprintf("http://%s.%s", username, c.domain),
+		URL:          fmt.Sprintf("https://%s.%s", username, c.domain),
 		CreatedAt:    ns.CreationTimestamp.Format(time.RFC3339),
 	}
 

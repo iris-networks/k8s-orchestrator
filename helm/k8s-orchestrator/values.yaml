@@ -142,7 +142,7 @@ cloudProvider:
 # Environment defaults for user environments
 userEnvironments:
   defaultImage: "accetto/ubuntu-vnc-xfce-firefox-g3"
-  defaultPorts: [5901, 6901]
+  defaultPorts: [3000, 6901]
   defaultVolumeSize: "1Gi"
   
   # Storage class for user PVCs

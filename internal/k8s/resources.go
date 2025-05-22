@@ -219,42 +219,56 @@ func (c *Client) createService(username, namespace string, ports []int) error {
 }
 
 // createIngress creates an ingress for a user
-func (c *Client) createIngress(username, namespace string, port int) error {
-	ingressName := fmt.Sprintf("%s-ingress", username)
+func (c *Client) createIngress(username, namespace string, ports []int) error {
+	serviceName := fmt.Sprintf("%s-svc", username)
 	host := fmt.Sprintf("%s.%s", username, c.domain)
-	pathType := networkingv1.PathTypePrefix
-	
-	ingressClassName := "nginx"
-	ingress := &networkingv1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: ingressName,
-			Labels: map[string]string{
-				"app":      "k8sgo",
-				"username": username,
+
+	// Create a separate ingress for each port
+	for _, port := range ports {
+		ingressName := fmt.Sprintf("%s-ingress-%d", username, port)
+		pathType := networkingv1.PathTypePrefix
+
+		ingressClassName := "nginx"
+		ingress := &networkingv1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: ingressName,
+				Labels: map[string]string{
+					"app":      "k8sgo",
+					"username": username,
+					"port":     fmt.Sprintf("%d", port),
+				},
+				Annotations: map[string]string{
+					"nginx.ingress.kubernetes.io/proxy-connect-timeout": "3600",
+					"nginx.ingress.kubernetes.io/proxy-read-timeout": "3600",
+					"nginx.ingress.kubernetes.io/proxy-send-timeout": "3600",
+					"nginx.ingress.kubernetes.io/websocket-services": serviceName,
+					"nginx.ingress.kubernetes.io/ssl-redirect": "true",
+					"cert-manager.io/cluster-issuer": "letsencrypt-prod",
+				},
 			},
-			Annotations: map[string]string{
-				"nginx.ingress.kubernetes.io/proxy-connect-timeout": "3600",
-				"nginx.ingress.kubernetes.io/proxy-read-timeout": "3600",
-				"nginx.ingress.kubernetes.io/proxy-send-timeout": "3600",
-				"nginx.ingress.kubernetes.io/websocket-services": fmt.Sprintf("%s-svc", username),
-			},
-		},
-		Spec: networkingv1.IngressSpec{
-			IngressClassName: &ingressClassName,
-			Rules: []networkingv1.IngressRule{
-				{
-					Host: host,
-					IngressRuleValue: networkingv1.IngressRuleValue{
-						HTTP: &networkingv1.HTTPIngressRuleValue{
-							Paths: []networkingv1.HTTPIngressPath{
-								{
-									Path:     "/",
-									PathType: &pathType,
-									Backend: networkingv1.IngressBackend{
-										Service: &networkingv1.IngressServiceBackend{
-											Name: fmt.Sprintf("%s-svc", username),
-											Port: networkingv1.ServiceBackendPort{
-												Number: int32(port),
+			Spec: networkingv1.IngressSpec{
+				IngressClassName: &ingressClassName,
+				TLS: []networkingv1.IngressTLS{
+					{
+						Hosts:      []string{host},
+						SecretName: fmt.Sprintf("%s-tls-%d", username, port),
+					},
+				},
+				Rules: []networkingv1.IngressRule{
+					{
+						Host: host,
+						IngressRuleValue: networkingv1.IngressRuleValue{
+							HTTP: &networkingv1.HTTPIngressRuleValue{
+								Paths: []networkingv1.HTTPIngressPath{
+									{
+										Path:     "/",
+										PathType: &pathType,
+										Backend: networkingv1.IngressBackend{
+											Service: &networkingv1.IngressServiceBackend{
+												Name: serviceName,
+												Port: networkingv1.ServiceBackendPort{
+													Number: int32(port),
+												},
 											},
 										},
 									},
@@ -264,12 +278,15 @@ func (c *Client) createIngress(username, namespace string, port int) error {
 					},
 				},
 			},
-		},
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		_, err := c.clientset.NetworkingV1().Ingresses(namespace).Create(ctx, ingress, metav1.CreateOptions{})
+		cancel()
+		if err != nil {
+			return err
+		}
 	}
-	
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	
-	_, err := c.clientset.NetworkingV1().Ingresses(namespace).Create(ctx, ingress, metav1.CreateOptions{})
-	return err
+
+	return nil
 }
