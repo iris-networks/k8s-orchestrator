@@ -304,27 +304,47 @@ kubectl wait --namespace ingress-nginx \
 # Install cert-manager
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml
 
-# Wait for cert-manager to be ready
+# Wait for cert-manager to be ready - this waits for the controller
 kubectl wait --namespace cert-manager \
   --for=condition=ready pod \
   --selector=app.kubernetes.io/component=controller \
   --timeout=120s
+
+# Wait for the webhook to be ready - important to avoid webhook errors
+kubectl wait --namespace cert-manager \
+  --for=condition=ready pod \
+  --selector=app.kubernetes.io/component=webhook \
+  --timeout=120s
+
+# Additional delay to ensure the webhook API is fully registered
+echo "Waiting 30 seconds for cert-manager webhook to fully initialize..."
+sleep 30
 ```
 
 > **Note**: As with NGINX Ingress, you may see resource default warnings for cert-manager. This is normal behavior in Autopilot.
 
 ### Configure Let's Encrypt with ClusterIssuer
 
-We've included a pre-configured ClusterIssuer manifest for Let's Encrypt in the repository. Simply apply it with:
+We've included a pre-configured ClusterIssuer manifest for Let's Encrypt in the repository. Apply it with:
 
 ```bash
 # Apply the ClusterIssuer for Let's Encrypt
 kubectl apply -f manifests/letsencrypt-prod.yaml
+
+# If you encounter a webhook error, wait a bit longer and try again
+if [ $? -ne 0 ]; then
+  echo "Webhook error encountered. Waiting 60 more seconds for cert-manager to fully initialize..."
+  sleep 60
+  kubectl apply -f manifests/letsencrypt-prod.yaml
+fi
+
+# Verify the ClusterIssuer has been created successfully
+kubectl get clusterissuer letsencrypt-prod -o wide
 ```
 
 The file is already configured with:
 - Let's Encrypt production server
-- Email set to admin@tryiris.dev
+- Email set to admin@tryiris.dev (you can customize this)
 - HTTP-01 challenge using the nginx ingress controller
 
 > **Note**: If you need to change the email address, edit the file at `manifests/letsencrypt-prod.yaml` before applying.
@@ -778,17 +798,31 @@ kubectl logs -n ingress-nginx -l app.kubernetes.io/component=controller
 
 #### Certificate Issues
 
-If TLS certificates are not being issued:
+If TLS certificates are not being issued or you encounter webhook errors:
 
 ```bash
+# Error: "failed calling webhook \"webhook.cert-manager.io\": failed to call webhook"
+# Solution: The cert-manager webhook isn't fully initialized. Wait longer:
+kubectl wait --namespace cert-manager \
+  --for=condition=ready pod \
+  --selector=app.kubernetes.io/component=webhook \
+  --timeout=120s
+sleep 30  # Allow time for the API registration to complete
+
 # Check cert-manager logs
 kubectl logs -n cert-manager -l app.kubernetes.io/component=controller
+
+# Check webhook logs for errors
+kubectl logs -n cert-manager -l app.kubernetes.io/component=webhook
 
 # Check certificate status
 kubectl get certificates -A
 
 # Check certificate requests
 kubectl get certificaterequests -A
+
+# Check ClusterIssuer status
+kubectl get clusterissuers -o wide
 ```
 
 #### Pod Startup Issues
