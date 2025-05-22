@@ -1,6 +1,42 @@
 {{- if .Values.ingress.enabled -}}
 {{- $fullName := include "k8s-orchestrator.fullname" . -}}
 {{- $svcPort := .Values.service.port -}}
+{{- if .Values.ingress.useTraefik -}}
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: {{ $fullName }}
+  labels:
+    {{- include "k8s-orchestrator.labels" . | nindent 4 }}
+    {{- with .Values.commonLabels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- with .Values.commonAnnotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  entryPoints:
+    {{- range .Values.ingress.entryPoints }}
+    - {{ . }}
+    {{- end }}
+  routes:
+    {{- range .Values.ingress.hosts }}
+    - match: Host(`{{ .host }}`)
+      kind: Rule
+      services:
+        - name: {{ $fullName }}
+          port: {{ $svcPort }}
+    {{- end }}
+  {{- if .Values.ingress.tls }}
+  tls:
+    {{- if .Values.ingress.tlsSecretName }}
+    secretName: {{ .Values.ingress.tlsSecretName }}
+    {{- end }}
+    {{- if .Values.ingress.certResolver }}
+    certResolver: {{ .Values.ingress.certResolver }}
+    {{- end }}
+  {{- end }}
+{{- else -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -60,4 +96,5 @@ spec:
                   number: {{ $svcPort }}
           {{- end }}
     {{- end }}
+{{- end }}
 {{- end }}

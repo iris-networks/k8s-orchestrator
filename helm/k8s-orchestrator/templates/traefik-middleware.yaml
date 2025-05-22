@@ -1,0 +1,49 @@
+{{- if and .Values.ingress.enabled .Values.ingress.useTraefik .Values.ingress.middleware.enabled -}}
+{{- $fullName := include "k8s-orchestrator.fullname" . -}}
+
+{{- if .Values.ingress.middleware.headers.enabled -}}
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ $fullName }}-headers
+  labels:
+    {{- include "k8s-orchestrator.labels" . | nindent 4 }}
+spec:
+  headers:
+    browserXssFilter: {{ .Values.ingress.middleware.headers.browserXssFilter | default true }}
+    contentTypeNosniff: {{ .Values.ingress.middleware.headers.contentTypeNosniff | default true }}
+    forceSTSHeader: {{ .Values.ingress.middleware.headers.forceSTSHeader | default true }}
+    stsIncludeSubdomains: {{ .Values.ingress.middleware.headers.stsIncludeSubdomains | default true }}
+    stsPreload: {{ .Values.ingress.middleware.headers.stsPreload | default true }}
+    stsSeconds: {{ .Values.ingress.middleware.headers.stsSeconds | default 31536000 }}
+    customFrameOptionsValue: {{ .Values.ingress.middleware.headers.customFrameOptionsValue | default "SAMEORIGIN" }}
+{{- end }}
+
+{{- if .Values.ingress.middleware.rateLimit.enabled -}}
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ $fullName }}-ratelimit
+  labels:
+    {{- include "k8s-orchestrator.labels" . | nindent 4 }}
+spec:
+  rateLimit:
+    average: {{ .Values.ingress.middleware.rateLimit.average | default 100 }}
+    burst: {{ .Values.ingress.middleware.rateLimit.burst | default 50 }}
+{{- end }}
+
+{{- if .Values.ingress.middleware.compress.enabled -}}
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ $fullName }}-compress
+  labels:
+    {{- include "k8s-orchestrator.labels" . | nindent 4 }}
+spec:
+  compress: {}
+{{- end }}
+
+{{- end }}

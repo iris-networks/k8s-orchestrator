@@ -6,7 +6,7 @@ This Helm chart deploys the K8s Orchestrator service, which creates isolated Kub
 
 - Kubernetes 1.19+
 - Helm 3.2.0+
-- Ingress controller installed (nginx, alb, etc.)
+- Ingress controller installed (Traefik, nginx, alb, etc.)
 - Cert-manager (for TLS certificates)
 - DNS setup for subdomains
 
@@ -130,6 +130,21 @@ helm install k8s-orchestrator k8s-orchestrator/k8s-orchestrator \
 | `cloudProvider.gcp.ingressClass`       | GCP ingress class                                | `nginx`   |
 | `cloudProvider.gcp.storageClass`       | GCP storage class                                | `standard-rwo` |
 
+### Ingress Configuration
+
+| Name                                   | Description                                      | Value     |
+|----------------------------------------|--------------------------------------------------|-----------|
+| `ingress.enabled`                      | Enable ingress                                   | `true`    |
+| `ingress.useTraefik`                   | Use Traefik IngressRoute instead of standard Ingress | `true` |
+| `ingress.className`                    | Ingress class name (when useTraefik: false)      | `nginx`   |
+| `ingress.entryPoints`                  | Traefik entry points (when useTraefik: true)     | `["web", "websecure"]` |
+| `ingress.tlsSecretName`                | TLS secret name for Traefik                      | `k8s-orchestrator-tls` |
+| `ingress.certResolver`                 | Cert resolver for Traefik                        | `letsencrypt` |
+| `ingress.middleware.enabled`           | Enable Traefik middleware                        | `true`    |
+| `ingress.middleware.headers.enabled`   | Enable security headers middleware               | `true`    |
+| `ingress.middleware.rateLimit.enabled` | Enable rate limiting middleware                  | `false`   |
+| `ingress.middleware.compress.enabled`  | Enable compression middleware                    | `true`    |
+
 ### User Environment Configuration
 
 | Name                                   | Description                                      | Value     |
@@ -144,6 +159,53 @@ helm install k8s-orchestrator k8s-orchestrator/k8s-orchestrator \
 ```bash
 helm uninstall k8s-orchestrator --namespace default
 ```
+
+## Using Traefik Instead of Nginx
+
+The chart now supports using Traefik as the ingress controller instead of Nginx. Traefik offers several advantages:
+
+- Better performance and scalability
+- Native support for WebSocket connections
+- Built-in middleware for common operations
+- More flexible routing capabilities
+- Automatic Let's Encrypt certificate generation and renewal
+
+### Enabling Traefik
+
+To use Traefik instead of Nginx, set the following in your values file:
+
+```yaml
+ingress:
+  enabled: true
+  useTraefik: true
+  entryPoints: ["web", "websecure"]  # Traefik entry points
+  tlsSecretName: "k8s-orchestrator-tls"
+  certResolver: "letsencrypt"  # If using Traefik's cert resolver
+  middleware:
+    enabled: true
+    headers:
+      enabled: true
+    compress:
+      enabled: true
+```
+
+### Traefik Middleware
+
+The chart includes several middleware configurations for Traefik:
+
+- **Headers**: Adds security headers (HSTS, XSS protection, etc.)
+- **Rate Limiting**: Prevents abuse by limiting request rates
+- **Compression**: Reduces bandwidth by compressing responses
+
+### Migrating from Nginx
+
+When migrating from Nginx to Traefik:
+
+1. Install Traefik in your cluster if not already present
+2. Update your values file to set `ingress.useTraefik: true`
+3. Deploy the chart with the updated values
+
+The chart will automatically deploy the necessary Traefik CRDs and IngressRoute resources.
 
 ## Limitations
 

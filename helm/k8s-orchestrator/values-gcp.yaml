@@ -24,7 +24,23 @@ env:
 # Ingress configuration
 ingress:
   enabled: true
-  className: "nginx"  # Will be overridden by cloudProvider settings
+  useTraefik: true
+  className: "nginx"  # Will be overridden by cloudProvider settings when useTraefik is false
+  # Traefik specific configuration
+  entryPoints: ["web", "websecure"]
+  tlsSecretName: "k8s-orchestrator-tls"
+  certResolver: "letsencrypt"
+  # Middleware configuration for Traefik
+  middleware:
+    enabled: true
+    headers:
+      enabled: true
+    rateLimit:
+      enabled: true
+      average: 100
+      burst: 50
+    compress:
+      enabled: true
   hosts:
     - host: api.pods.tryiris.dev
       paths:

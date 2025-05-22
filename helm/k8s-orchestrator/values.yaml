@@ -80,10 +80,36 @@ service:
 # Ingress configuration
 ingress:
   enabled: true
+  # Set to true to use Traefik IngressRoute instead of standard Kubernetes Ingress
+  useTraefik: true
+  # Use className with standard Kubernetes Ingress (when useTraefik is false)
   className: "nginx"
+  # Traefik specific configuration (when useTraefik is true)
+  entryPoints: ["web", "websecure"]
+  tlsSecretName: "k8s-orchestrator-tls"
+  certResolver: "letsencrypt"
+  # Standard Kubernetes Ingress annotations (when useTraefik is false)
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  # Middleware configuration for Traefik
+  middleware:
+    enabled: true
+    headers:
+      enabled: true
+      browserXssFilter: true
+      contentTypeNosniff: true
+      forceSTSHeader: true
+      stsIncludeSubdomains: true
+      stsPreload: true
+      stsSeconds: 31536000
+      customFrameOptionsValue: "SAMEORIGIN"
+    rateLimit:
+      enabled: false
+      average: 100
+      burst: 50
+    compress:
+      enabled: true
   hosts:
     - host: api.pods.tryiris.dev
       paths:

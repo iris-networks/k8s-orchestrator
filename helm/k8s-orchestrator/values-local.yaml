@@ -24,10 +24,27 @@ env:
 # Ingress configuration
 ingress:
   enabled: true
+  useTraefik: true
+  # For standard Kubernetes Ingress (when useTraefik is false)
   className: "nginx"
+  # Traefik specific configuration
+  entryPoints: ["web", "websecure"]
+  # No TLS for local development
+  tlsSecretName: ""
+  certResolver: ""
+  # Standard annotations for Kubernetes Ingress
   annotations:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
+  # Middleware configuration for Traefik
+  middleware:
+    enabled: true
+    headers:
+      enabled: false
+    rateLimit:
+      enabled: false
+    compress:
+      enabled: true
   hosts:
     - host: api.pods.tryiris.dev
       paths:
