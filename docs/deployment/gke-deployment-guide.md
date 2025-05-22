@@ -207,19 +207,16 @@ gcloud services enable container.googleapis.com
 Create a GKE Autopilot cluster in Singapore region:
 
 ```bash
-# Create a GKE Autopilot cluster in Singapore region with the Kubelet readonly port disabled
+# Create a GKE Autopilot cluster in Singapore region
 gcloud container clusters create-auto k8s-orchestrator \
   --region asia-southeast1 \
-  --release-channel=regular \
-  --no-enable-insecure-kubelet-readonly-port
+  --release-channel=regular
 ```
 
 Autopilot automatically manages the infrastructure, including:
 - Node provisioning and scaling
 - Security and node upgrades
 - Resource optimization
-
-> **Note**: We explicitly disable the insecure Kubelet readonly port (10255) as it's deprecated. See [Disabling the Deprecated Kubelet Readonly Port](../admin/kubelet-readonly-port.md) for more information.
 
 ### Set Resource Quotas
 
@@ -729,7 +726,7 @@ If you see warnings about the deprecated Kubelet readonly port:
 Note: The Kubelet readonly port (10255) is now deprecated. Please update your workloads to use the recommended alternatives.
 ```
 
-This is addressed in our cluster creation by using the `--no-enable-insecure-kubelet-readonly-port` flag. See our [Kubelet Readonly Port Guide](../admin/kubelet-readonly-port.md) for more details on checking usage and migration.
+This is a standard warning from GKE. In most cases, you don't need to do anything as your workloads likely don't use this port directly.
 
 #### Kubectl Version Mismatch Issues
 
