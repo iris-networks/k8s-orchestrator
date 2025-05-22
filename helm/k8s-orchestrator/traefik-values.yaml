@@ -3,6 +3,10 @@ additionalArguments:
   - "--providers.kubernetesingress.ingressclass=traefik"
   - "--providers.kubernetescrd.allowCrossNamespace=true"
 
+  # Entrypoint addresses
+  - "--entrypoints.web.address=:8000/tcp"
+  - "--entrypoints.websecure.address=:8443/tcp"
+
   # HTTP to HTTPS redirection
   - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
   - "--entrypoints.web.http.redirections.entryPoint.scheme=https"

@@ -3,12 +3,13 @@ package k8s
 import (
 	"context"
 	"fmt"
+	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/k8sgo/internal/models"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -218,73 +219,46 @@ func (c *Client) createService(username, namespace string, ports []int) error {
 	return err
 }
 
-// createIngress creates an ingress for a user
+// createIngress creates a Traefik IngressRoute for a user
 func (c *Client) createIngress(username, namespace string, ports []int) error {
 	serviceName := fmt.Sprintf("%s-svc", username)
 	host := fmt.Sprintf("%s.%s", username, c.domain)
 
-	// Create a separate ingress for each port
+	// Create a separate IngressRoute for each port
 	for _, port := range ports {
-		ingressName := fmt.Sprintf("%s-ingress-%d", username, port)
-		pathType := networkingv1.PathTypePrefix
+		ingressName := fmt.Sprintf("%s-ingressroute-%d", username, port)
 
-		ingressClassName := "nginx"
-		ingress := &networkingv1.Ingress{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: ingressName,
-				Labels: map[string]string{
-					"app":      "k8sgo",
-					"username": username,
-					"port":     fmt.Sprintf("%d", port),
-				},
-				Annotations: map[string]string{
-					"nginx.ingress.kubernetes.io/proxy-connect-timeout": "3600",
-					"nginx.ingress.kubernetes.io/proxy-read-timeout": "3600",
-					"nginx.ingress.kubernetes.io/proxy-send-timeout": "3600",
-					"nginx.ingress.kubernetes.io/websocket-services": serviceName,
-					"nginx.ingress.kubernetes.io/ssl-redirect": "true",
-					"cert-manager.io/cluster-issuer": "letsencrypt-prod",
-				},
-			},
-			Spec: networkingv1.IngressSpec{
-				IngressClassName: &ingressClassName,
-				TLS: []networkingv1.IngressTLS{
-					{
-						Hosts:      []string{host},
-						SecretName: fmt.Sprintf("%s-tls-%d", username, port),
-					},
-				},
-				Rules: []networkingv1.IngressRule{
-					{
-						Host: host,
-						IngressRuleValue: networkingv1.IngressRuleValue{
-							HTTP: &networkingv1.HTTPIngressRuleValue{
-								Paths: []networkingv1.HTTPIngressPath{
-									{
-										Path:     "/",
-										PathType: &pathType,
-										Backend: networkingv1.IngressBackend{
-											Service: &networkingv1.IngressServiceBackend{
-												Name: serviceName,
-												Port: networkingv1.ServiceBackendPort{
-													Number: int32(port),
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		}
+		// Define the IngressRoute as raw YAML to avoid importing Traefik CRD dependencies
+		ingressRouteYAML := fmt.Sprintf(`
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: %s
+  namespace: %s
+  labels:
+    app: k8sgo
+    username: %s
+    port: "%d"
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+    - match: Host("%s") && PathPrefix("/")
+      kind: Rule
+      services:
+        - name: %s
+          port: %d
+  tls:
+    certResolver: letsencrypt
+`, ingressName, namespace, username, port, host, serviceName, port)
 
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		_, err := c.clientset.NetworkingV1().Ingresses(namespace).Create(ctx, ingress, metav1.CreateOptions{})
-		cancel()
+		// Apply the IngressRoute using kubectl apply
+		cmd := exec.Command("kubectl", "apply", "-f", "-")
+		cmd.Stdin = strings.NewReader(ingressRouteYAML)
+		output, err := cmd.CombinedOutput()
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to create IngressRoute: %v, output: %s", err, string(output))
 		}
 	}
 
