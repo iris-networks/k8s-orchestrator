@@ -9,20 +9,21 @@ YELLOW='\033[0;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-echo -e "${YELLOW}Installing kubectl and GKE auth plugin for your GKE cluster...${NC}"
+echo -e "${YELLOW}Installing kubectl and GKE auth plugin for your macOS GKE setup...${NC}"
 
-# Check OS and architecture
-OS="darwin"
+# Check if running on macOS
 if [[ "$(uname)" != "Darwin" ]]; then
-  OS="linux"
+  echo -e "${RED}This script is designed for macOS only.${NC}"
+  exit 1
 fi
 
+# Get macOS architecture
 ARCH=$(uname -m)
 if [[ "$ARCH" == "x86_64" ]]; then
   ARCH="amd64"
 fi
 
-echo -e "${YELLOW}Detected OS: $OS, Architecture: $ARCH${NC}"
+echo -e "${YELLOW}Detected macOS with $ARCH architecture${NC}"
 
 # Get the server version if kubectl is already installed and we can connect to a cluster
 SERVER_VERSION=""
@@ -41,8 +42,8 @@ else
 fi
 
 # Download the appropriate kubectl version
-echo -e "${YELLOW}Downloading kubectl v$SERVER_VERSION...${NC}"
-curl -LO "https://dl.k8s.io/release/v$SERVER_VERSION/bin/$OS/$ARCH/kubectl"
+echo -e "${YELLOW}Downloading kubectl v$SERVER_VERSION for macOS $ARCH...${NC}"
+curl -LO "https://dl.k8s.io/release/v$SERVER_VERSION/bin/darwin/$ARCH/kubectl"
 
 # Make it executable
 chmod +x ./kubectl
@@ -118,28 +119,26 @@ if command -v gke-gcloud-auth-plugin &>/dev/null; then
   gke-gcloud-auth-plugin --version
 else
   echo -e "${YELLOW}gke-gcloud-auth-plugin not found. Installing now...${NC}"
-  
+
   # Check if gcloud is available
   if command -v gcloud &>/dev/null; then
     echo -e "${YELLOW}Installing gke-gcloud-auth-plugin via gcloud...${NC}"
     gcloud components install gke-gcloud-auth-plugin
-    
+
     if command -v gke-gcloud-auth-plugin &>/dev/null; then
       echo -e "${GREEN}gke-gcloud-auth-plugin installed successfully!${NC}"
       gke-gcloud-auth-plugin --version
     else
       echo -e "${RED}Failed to install gke-gcloud-auth-plugin via gcloud.${NC}"
-      echo -e "${YELLOW}Please install it manually:${NC}"
-      echo -e "${YELLOW}  - For macOS: brew install --cask google-cloud-sdk${NC}"
-      echo -e "${YELLOW}  - For Ubuntu/Debian: sudo apt-get install google-cloud-cli google-cloud-sdk-gke-gcloud-auth-plugin${NC}"
-      echo -e "${YELLOW}  - For RHEL/CentOS/Fedora: sudo yum install google-cloud-cli google-cloud-sdk-gke-gcloud-auth-plugin${NC}"
+      echo -e "${YELLOW}Please install it manually using Homebrew:${NC}"
+      echo -e "${YELLOW}  brew install --cask google-cloud-sdk${NC}"
+      echo -e "${YELLOW}  gcloud components install gke-gcloud-auth-plugin${NC}"
     fi
   else
     echo -e "${RED}gcloud command not found. Cannot install gke-gcloud-auth-plugin automatically.${NC}"
     echo -e "${YELLOW}Please install gcloud SDK and the GKE auth plugin manually:${NC}"
-    echo -e "${YELLOW}  - For macOS: brew install --cask google-cloud-sdk${NC}"
-    echo -e "${YELLOW}  - For Ubuntu/Debian: sudo apt-get install google-cloud-cli google-cloud-sdk-gke-gcloud-auth-plugin${NC}"
-    echo -e "${YELLOW}  - For RHEL/CentOS/Fedora: sudo yum install google-cloud-cli google-cloud-sdk-gke-gcloud-auth-plugin${NC}"
+    echo -e "${YELLOW}  brew install --cask google-cloud-sdk${NC}"
+    echo -e "${YELLOW}  gcloud components install gke-gcloud-auth-plugin${NC}"
   fi
 fi
 
