@@ -34,16 +34,17 @@ graph TD
             SubdomainManager --> Ingress6901[Ingress Port 6901]
         end
 
-        DNS[Cloud DNS] --- Ingress3000
-        DNS --- Ingress6901
+        DNS[Namecheap DNS]
+        Ingress3000 --> DNS
+        Ingress6901 --> DNS
     end
 
-    User1Web[User 1 Web] -->|https://user1.pods.tryiris.dev:3000| Ingress3000
-    User1VNC[User 1 VNC] -->|https://user1.pods.tryiris.dev:6901| Ingress6901
-    User2Web[User 2 Web] -->|https://user2.pods.tryiris.dev:3000| Ingress3000
-    User2VNC[User 2 VNC] -->|https://user2.pods.tryiris.dev:6901| Ingress6901
+    User1Web[User 1 Web] -->|https://user1.pods.tryiris.dev:3000| DNS
+    User1VNC[User 1 VNC] -->|https://user1.pods.tryiris.dev:6901| DNS
+    User2Web[User 2 Web] -->|https://user2.pods.tryiris.dev:3000| DNS
+    User2VNC[User 2 VNC] -->|https://user2.pods.tryiris.dev:6901| DNS
 
-    Admin[Administrator] -->|https://api.pods.tryiris.dev| API
+    Admin[Administrator] -->|https://api.pods.tryiris.dev| DNS
 ```
 
 ## Prerequisites
