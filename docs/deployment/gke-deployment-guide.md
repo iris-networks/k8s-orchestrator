@@ -75,9 +75,9 @@ exec -l $SHELL
 gcloud init  # Follow the initialization steps
 ```
 
-#### Install kubectl
+#### Install kubectl and GKE Auth Plugin
 
-You have three options to install kubectl:
+For GKE, you need both kubectl and the GKE auth plugin. Here are your installation options:
 
 ##### Option 1: Install using our script (Recommended)
 
@@ -131,6 +131,65 @@ sudo mv kubectl /usr/local/bin/kubectl
 ```
 
 > **Important**: For optimal compatibility, make sure your kubectl version is within one minor version of your cluster's version (e.g., v1.31.x client works with v1.32.x server).
+
+#### Install GKE Auth Plugin (Required)
+
+The GKE auth plugin is required for kubectl to authenticate with GKE clusters. If you see this error:
+
+```
+CRITICAL: ACTION REQUIRED: gke-gcloud-auth-plugin, which is needed for continued use of kubectl, was not found or is not executable.
+```
+
+Install the plugin using one of these methods:
+
+**Option 1: Install via gcloud CLI (Recommended)**
+
+```bash
+# Install the GKE auth plugin
+gcloud components install gke-gcloud-auth-plugin
+
+# Verify the installation
+gke-gcloud-auth-plugin --version
+```
+
+**Option 2: Install via package manager**
+
+**For macOS:**
+```bash
+# Using Homebrew
+brew install --cask google-cloud-sdk
+```
+
+**For Ubuntu/Debian:**
+```bash
+# Add the Google Cloud SDK distribution URI as a package source
+echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+
+# Import the Google Cloud public key
+curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -
+
+# Update and install the Cloud SDK and GKE auth plugin
+sudo apt-get update && sudo apt-get install google-cloud-cli google-cloud-sdk-gke-gcloud-auth-plugin
+```
+
+**For RHEL/CentOS/Fedora:**
+```bash
+# Update YUM with Cloud SDK repo information
+sudo tee -a /etc/yum.repos.d/google-cloud-sdk.repo << EOM
+[google-cloud-cli]
+name=Google Cloud CLI
+baseurl=https://packages.cloud.google.com/yum/repos/cloud-sdk-el8-x86_64
+enabled=1
+gpgcheck=1
+repo_gpgcheck=0
+gpgkey=https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+EOM
+
+# Install the Cloud SDK and GKE auth plugin
+sudo yum install google-cloud-cli google-cloud-sdk-gke-gcloud-auth-plugin
+```
+
+After installation, verify that kubectl can use the plugin by running a simple kubectl command against your GKE cluster.
 
 #### Install Helm
 
@@ -728,18 +787,22 @@ Note: The Kubelet readonly port (10255) is now deprecated. Please update your wo
 
 This is a standard warning from GKE. In most cases, you don't need to do anything as your workloads likely don't use this port directly.
 
-#### Kubectl Version Mismatch Issues
+#### GKE Auth Plugin and Kubectl Issues
 
-If you encounter errors related to kubectl version incompatibility:
+If you encounter errors related to kubectl authentication or version compatibility:
 
 ```bash
+# Error: "CRITICAL: ACTION REQUIRED: gke-gcloud-auth-plugin, which is needed for continued use of kubectl, was not found or is not executable."
+# Solution: Install the GKE auth plugin
+gcloud components install gke-gcloud-auth-plugin
+
 # Error: "WARNING: version difference between client (X.Y) and server (A.B) exceeds the supported minor version skew of +/-1"
 # Solution: Install the compatible kubectl version using our script
 
-# Run the script directly from the repository
+# Run the script directly from the repository - this will install both kubectl and the GKE auth plugin
 bash scripts/install_kubectl.sh
 
-# This will install the correct kubectl version compatible with your server
+# This will install the correct kubectl version compatible with your server and the required auth plugin
 ```
 
 #### Project ID and Quota Issues

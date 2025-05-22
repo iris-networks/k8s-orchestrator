@@ -9,7 +9,7 @@ YELLOW='\033[0;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-echo -e "${YELLOW}Installing kubectl for your GKE cluster...${NC}"
+echo -e "${YELLOW}Installing kubectl and GKE auth plugin for your GKE cluster...${NC}"
 
 # Check OS and architecture
 OS="darwin"
@@ -88,29 +88,61 @@ else
   fi
 fi
 
-# Verify the installation
+# Verify the kubectl installation
 if [[ -n "$INSTALL_DIR" ]] && [[ -x "$INSTALL_DIR/kubectl" ]]; then
   echo -e "${GREEN}kubectl v$SERVER_VERSION installed successfully!${NC}"
-  echo -e "${YELLOW}Verifying version:${NC}"
-
+  echo -e "${YELLOW}Verifying kubectl version:${NC}"
+  
   # Use the installed kubectl directly if it's in the PATH
   if command -v kubectl &>/dev/null; then
     kubectl version --client
   else
     "$INSTALL_DIR/kubectl" version --client
   fi
-
-  echo -e "${GREEN}Installation complete!${NC}"
-  echo -e "${YELLOW}You can test the connection to your cluster with:${NC}"
-  echo -e "${YELLOW}kubectl cluster-info${NC}"
-
-  # Clean up the downloaded binary
+  
+  # Clean up the downloaded kubectl binary
   if [[ -f "./kubectl" ]]; then
-    echo -e "${YELLOW}Cleaning up downloaded binary...${NC}"
+    echo -e "${YELLOW}Cleaning up downloaded kubectl binary...${NC}"
     rm -f ./kubectl
-    echo -e "${GREEN}Cleanup complete.${NC}"
+    echo -e "${GREEN}kubectl cleanup complete.${NC}"
   fi
 else
-  echo -e "${RED}Installation failed.${NC}"
+  echo -e "${RED}kubectl installation failed.${NC}"
   exit 1
 fi
+
+# Install GKE auth plugin
+echo -e "${YELLOW}Checking for gke-gcloud-auth-plugin...${NC}"
+if command -v gke-gcloud-auth-plugin &>/dev/null; then
+  echo -e "${GREEN}gke-gcloud-auth-plugin is already installed.${NC}"
+  gke-gcloud-auth-plugin --version
+else
+  echo -e "${YELLOW}gke-gcloud-auth-plugin not found. Installing now...${NC}"
+  
+  # Check if gcloud is available
+  if command -v gcloud &>/dev/null; then
+    echo -e "${YELLOW}Installing gke-gcloud-auth-plugin via gcloud...${NC}"
+    gcloud components install gke-gcloud-auth-plugin
+    
+    if command -v gke-gcloud-auth-plugin &>/dev/null; then
+      echo -e "${GREEN}gke-gcloud-auth-plugin installed successfully!${NC}"
+      gke-gcloud-auth-plugin --version
+    else
+      echo -e "${RED}Failed to install gke-gcloud-auth-plugin via gcloud.${NC}"
+      echo -e "${YELLOW}Please install it manually:${NC}"
+      echo -e "${YELLOW}  - For macOS: brew install --cask google-cloud-sdk${NC}"
+      echo -e "${YELLOW}  - For Ubuntu/Debian: sudo apt-get install google-cloud-cli google-cloud-sdk-gke-gcloud-auth-plugin${NC}"
+      echo -e "${YELLOW}  - For RHEL/CentOS/Fedora: sudo yum install google-cloud-cli google-cloud-sdk-gke-gcloud-auth-plugin${NC}"
+    fi
+  else
+    echo -e "${RED}gcloud command not found. Cannot install gke-gcloud-auth-plugin automatically.${NC}"
+    echo -e "${YELLOW}Please install gcloud SDK and the GKE auth plugin manually:${NC}"
+    echo -e "${YELLOW}  - For macOS: brew install --cask google-cloud-sdk${NC}"
+    echo -e "${YELLOW}  - For Ubuntu/Debian: sudo apt-get install google-cloud-cli google-cloud-sdk-gke-gcloud-auth-plugin${NC}"
+    echo -e "${YELLOW}  - For RHEL/CentOS/Fedora: sudo yum install google-cloud-cli google-cloud-sdk-gke-gcloud-auth-plugin${NC}"
+  fi
+fi
+
+echo -e "${GREEN}Installation complete!${NC}"
+echo -e "${YELLOW}You can test the connection to your cluster with:${NC}"
+echo -e "${YELLOW}kubectl cluster-info${NC}"
