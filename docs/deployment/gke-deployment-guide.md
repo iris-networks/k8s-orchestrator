@@ -292,6 +292,12 @@ kubectl wait --namespace ingress-nginx \
   --timeout=120s
 ```
 
+> **Note**: When installing NGINX Ingress Controller on Autopilot, you may see warnings like:
+> ```
+> Warning: autopilot-default-resources-mutator:Autopilot updated Deployment...
+> ```
+> These warnings are normal and expected. Autopilot automatically assigns resource requirements to containers that don't specify them. See [Understanding Autopilot Resource Defaults](../admin/autopilot-resource-defaults.md) for details.
+
 ### Install cert-manager for TLS Certificates
 
 ```bash
@@ -304,6 +310,8 @@ kubectl wait --namespace cert-manager \
   --selector=app.kubernetes.io/component=controller \
   --timeout=120s
 ```
+
+> **Note**: As with NGINX Ingress, you may see resource default warnings for cert-manager. This is normal behavior in Autopilot.
 
 ### Create ClusterIssuer for Let's Encrypt
 
@@ -703,6 +711,10 @@ If you encounter issues with GKE Autopilot:
 # Error: Pod scheduling failure due to resource requirements
 # Solution: Ensure all pods have resource requests set
 kubectl describe pod [pod-name]  # Check for resource-related events
+
+# Warning: autopilot-default-resources-mutator
+# Solution: This is normal, Autopilot is setting default resource requirements
+# See: docs/admin/autopilot-resource-defaults.md
 
 # Error: Unsupported features in Autopilot
 # Solution: Check Autopilot limitations
