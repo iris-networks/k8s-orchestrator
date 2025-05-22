@@ -84,17 +84,11 @@ You have three options to install kubectl:
 We provide a script that automatically detects your server version and installs the compatible kubectl. The script is included in the repository at `scripts/install_kubectl.sh`.
 
 ```bash
-# Navigate to the repository root
-cd /path/to/k8s-orchestrator
+# Run the script directly from the repository
+bash scripts/install_kubectl.sh
 
-# Copy the script to your desired location
-cp scripts/install_kubectl.sh ~/install_kubectl.sh
-
-# Make it executable
-chmod +x ~/install_kubectl.sh
-
-# Run the script
-~/install_kubectl.sh
+# After installation is complete, the script will verify the kubectl version
+# The kubectl binary will be installed to the appropriate location on your system
 ```
 
 This script will:
@@ -733,14 +727,10 @@ If you encounter errors related to kubectl version incompatibility:
 # Error: "WARNING: version difference between client (X.Y) and server (A.B) exceeds the supported minor version skew of +/-1"
 # Solution: Install the compatible kubectl version using our script
 
-# Navigate to the repository root
-cd /path/to/k8s-orchestrator
-
-# Run the script directly
+# Run the script directly from the repository
 bash scripts/install_kubectl.sh
 
-# Or copy it to your home directory first
-# cp scripts/install_kubectl.sh ~/install_kubectl.sh && chmod +x ~/install_kubectl.sh && ~/install_kubectl.sh
+# This will install the correct kubectl version compatible with your server
 ```
 
 #### Project ID and Quota Issues

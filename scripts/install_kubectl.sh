@@ -92,17 +92,24 @@ fi
 if [[ -n "$INSTALL_DIR" ]] && [[ -x "$INSTALL_DIR/kubectl" ]]; then
   echo -e "${GREEN}kubectl v$SERVER_VERSION installed successfully!${NC}"
   echo -e "${YELLOW}Verifying version:${NC}"
-  
+
   # Use the installed kubectl directly if it's in the PATH
   if command -v kubectl &>/dev/null; then
     kubectl version --client
   else
     "$INSTALL_DIR/kubectl" version --client
   fi
-  
+
   echo -e "${GREEN}Installation complete!${NC}"
   echo -e "${YELLOW}You can test the connection to your cluster with:${NC}"
   echo -e "${YELLOW}kubectl cluster-info${NC}"
+
+  # Clean up the downloaded binary
+  if [[ -f "./kubectl" ]]; then
+    echo -e "${YELLOW}Cleaning up downloaded binary...${NC}"
+    rm -f ./kubectl
+    echo -e "${GREEN}Cleanup complete.${NC}"
+  fi
 else
   echo -e "${RED}Installation failed.${NC}"
   exit 1
