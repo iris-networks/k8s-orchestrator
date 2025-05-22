@@ -313,35 +313,21 @@ kubectl wait --namespace cert-manager \
 
 > **Note**: As with NGINX Ingress, you may see resource default warnings for cert-manager. This is normal behavior in Autopilot.
 
-### Create ClusterIssuer for Let's Encrypt
+### Configure Let's Encrypt with ClusterIssuer
 
-Create a file named `letsencrypt-prod.yaml`:
-
-```yaml
-apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
-metadata:
-  name: letsencrypt-prod
-spec:
-  acme:
-    server: https://acme-v02.api.letsencrypt.org/directory
-    email: admin@tryiris.dev
-    privateKeySecretRef:
-      name: letsencrypt-prod
-    solvers:
-    - http01:
-        ingress:
-          class: nginx
-```
-
-Apply the configuration:
+We've included a pre-configured ClusterIssuer manifest for Let's Encrypt in the repository. Simply apply it with:
 
 ```bash
-# The email is already set to admin@tryiris.dev
-
-# Apply the ClusterIssuer
-kubectl apply -f letsencrypt-prod.yaml
+# Apply the ClusterIssuer for Let's Encrypt
+kubectl apply -f manifests/letsencrypt-prod.yaml
 ```
+
+The file is already configured with:
+- Let's Encrypt production server
+- Email set to admin@tryiris.dev
+- HTTP-01 challenge using the nginx ingress controller
+
+> **Note**: If you need to change the email address, edit the file at `manifests/letsencrypt-prod.yaml` before applying.
 
 ## 3. Configuring DNS with Namecheap for tryiris.dev
 
