@@ -1,7 +1,5 @@
 # Deploying K8s Orchestrator to Google Kubernetes Engine (GKE)
 
-This tutorial provides step-by-step instructions for deploying the K8s Orchestrator service on Google Kubernetes Engine (GKE) using Helm. The orchestrator creates isolated Kubernetes environments for users with persistent storage and dynamic subdomains through VNC.
-
 ## Architecture Overview
 
 The following diagram shows the high-level architecture of the K8s Orchestrator deployment on GKE:
@@ -190,41 +188,28 @@ Apply the configuration:
 kubectl apply -f letsencrypt-prod.yaml
 ```
 
-## 3. Configuring DNS for tryiris.dev
+## 3. Configuring DNS with Namecheap for tryiris.dev
 
-### Set Up Cloud DNS
+After deploying your GKE cluster and ingress controller, you'll need to configure the DNS records in Namecheap:
 
-```bash
-# Create a DNS zone for tryiris.dev (if not already created)
-gcloud dns managed-zones create k8s-orchestrator \
-  --dns-name=tryiris.dev. \
-  --description="DNS zone for K8s Orchestrator"
-
-# Get the nameservers assigned to your zone
-gcloud dns managed-zones describe k8s-orchestrator \
-  --format="value(nameServers)"
-```
-
-Configure the tryiris.dev domain registrar to use the nameservers provided by Cloud DNS.
-
-### Create DNS Records
-
-Wait until after deployment to create these records, as you'll need the Ingress IP address:
+1. Get the Ingress Controller's external IP address:
 
 ```bash
-# After deploying, get the Ingress IP
+# Get the Ingress IP
 INGRESS_IP=$(kubectl get service -n ingress-nginx ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-
-# Create an A record for the API
-gcloud dns record-sets create api.pods.tryiris.dev. \
-  --type=A --ttl=300 --zone=k8s-orchestrator \
-  --rrdatas=$INGRESS_IP
-
-# Create a wildcard A record for user pods subdomains
-gcloud dns record-sets create "*.pods.tryiris.dev." \
-  --type=A --ttl=300 --zone=k8s-orchestrator \
-  --rrdatas=$INGRESS_IP
+echo $INGRESS_IP  # Make note of this IP for Namecheap configuration
 ```
+
+2. In Namecheap's dashboard:
+   - Go to Dashboard → Domain List → Manage → Advanced DNS
+   - Add the following A records:
+
+   | Type | Host | Value | TTL |
+   |------|------|-------|-----|
+   | A Record | api.pods | {INGRESS_IP} | Automatic |
+   | A Record | *.pods | {INGRESS_IP} | Automatic |
+
+3. Wait for DNS propagation (can take up to 24-48 hours, but often much faster)
 
 ## 4. Deploying with Helm
 
@@ -577,8 +562,3 @@ kubectl get namespaces -l app=k8s-orchestrator | grep user- | awk '{print $1}' |
 gcloud container clusters delete k8s-orchestrator --region us-central1
 ```
 
-## Conclusion
-
-You now have a fully operational K8s Orchestrator deployed on Google Kubernetes Engine (GKE). This system can create isolated user environments with their own subdomains and persistent storage, accessible via VNC. The deployment is scalable, highly available, and uses industry best practices for security and management.
-
-The Helm chart makes it easy to deploy and manage, while the architecture ensures that user environments are properly isolated from each other. With this setup, you can provide virtual desktop environments to users, with the ability to start, stop, and manage these environments efficiently.
