@@ -15,36 +15,41 @@ graph TD
             end
 
             subgraph "User Environment 1"
-                Container1[Container<br>Web Server + VNC]
+                Container1[Container\nWeb Server + VNC]
                 PVC1[Persistent Volume]
-                Container1 --- PVC1
+                Container1 -- Mounts --> PVC1
             end
 
             subgraph "User Environment 2"
-                Container2[Container<br>Web Server + VNC]
+                Container2[Container\nWeb Server + VNC]
                 PVC2[Persistent Volume]
-                Container2 --- PVC2
+                Container2 -- Mounts --> PVC2
             end
 
-            K8sClient --> Container1
-            K8sClient --> Container2
-            VolManager --> PVC1
-            VolManager --> PVC2
-            SubdomainManager --> Ingress3000[Ingress Port 3000]
-            SubdomainManager --> Ingress6901[Ingress Port 6901]
+            K8sClient -- Manages --> Container1
+            K8sClient -- Manages --> Container2
+            VolManager -- Provisions --> PVC1
+            VolManager -- Provisions --> PVC2
+            SubdomainManager -- Configures --> Ingress3000[Ingress:3000]
+            SubdomainManager -- Configures --> Ingress6901[Ingress:6901]
         end
 
-        DNS[Namecheap DNS]
-        Ingress3000 --> DNS
-        Ingress6901 --> DNS
+        DNS[Cloud DNS]
+        Ingress3000 -- Routes to --> DNS
+        Ingress6901 -- Routes to --> DNS
     end
 
-    User1Web[User 1 Web] -->|https://user1.pods.tryiris.dev:3000| DNS
-    User1VNC[User 1 VNC] -->|https://user1.pods.tryiris.dev:6901| DNS
-    User2Web[User 2 Web] -->|https://user2.pods.tryiris.dev:3000| DNS
-    User2VNC[User 2 VNC] -->|https://user2.pods.tryiris.dev:6901| DNS
+    DNS -- Resolves --> User1Web[user1.pods.tryiris.dev:3000]
+    DNS -- Resolves --> User1VNC[user1.pods.tryiris.dev:6901]
+    DNS -- Resolves --> User2Web[user2.pods.tryiris.dev:3000]
+    DNS -- Resolves --> User2VNC[user2.pods.tryiris.dev:6901]
 
-    Admin[Administrator] -->|https://api.pods.tryiris.dev| DNS
+    User1[User 1] -- Accesses --> User1Web
+    User1 -- Accesses --> User1VNC
+    User2[User 2] -- Accesses --> User2Web
+    User2 -- Accesses --> User2VNC
+
+    Admin[Administrator] -- Manages via --> API
 ```
 
 ## Prerequisites
