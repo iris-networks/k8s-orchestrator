@@ -255,46 +255,22 @@ This command:
 2. Creates or updates your kubeconfig file (~/.kube/config)
 3. Sets your current context to the new cluster
 
-### Viewing Your GKE Cluster Information
-
-To view information about your current cluster:
+Verify that kubectl is properly configured:
 
 ```bash
-# Get a comprehensive overview of your cluster
+# Check if kubectl is properly configured
 kubectl cluster-info
-
-# View your current kubectl context
-kubectl config current-context
-
-# List all available contexts
-kubectl config get-contexts
-
-# Switch to a different context if you have multiple clusters
-kubectl config use-context CONTEXT_NAME
-
-# Get detailed information about your cluster
-gcloud container clusters describe k8s-orchestrator --region asia-southeast1
 
 # List all nodes in your cluster
 kubectl get nodes
-
-# Get information about your cluster's capacity and allocatable resources
-kubectl get nodes -o=custom-columns=NAME:.metadata.name,CPU:.status.capacity.cpu,MEMORY:.status.capacity.memory
-
-# View all namespaces in your cluster
-kubectl get namespaces
-
-# Get a list of all resources in the default namespace
-kubectl get all
-
-# Get all pods across all namespaces
-kubectl get pods --all-namespaces
 ```
 
 If these commands succeed, you're ready to proceed. If you encounter any errors, make sure:
 - You're logged in with gcloud (`gcloud auth login`)
 - The cluster creation has completed
 - You're using the correct project ID
+
+> **Note**: For common administrative operations and commands to manage your cluster after deployment, please see the [Kubernetes Cluster Administration Guide](../admin/kubernetes-operations.md)
 
 
 ## 2. Setting Up Core Kubernetes Components
