@@ -17,7 +17,7 @@ spec:
       serviceAccountName: k8sgo-sa
       containers:
       - name: k8sgo
-        image: shanurcsenitap/irisk8s:latest
+        image: shanurcsenitap/irisk8s:amd64
         imagePullPolicy: Always
         ports:
         - containerPort: 8080

@@ -29,8 +29,8 @@ Build a Golang service that manages per-user containerized sandboxes using Kuber
 - **Ingress**: Use Traefik for dynamic subdomain provisioning
 
 ### API Endpoints
-- `POST /sandbox/{userId}` - Create user sandbox
-- `DELETE /sandbox/{userId}` - Delete user sandbox
+- `POST /v1/sandbox/{userId}` - Create user sandbox
+- `DELETE /v1/sandbox/{userId}` - Delete user sandbox
 
 ### Kubernetes Resources to Manage
 - Deployments (container lifecycle)
@@ -46,9 +46,9 @@ Build a Golang service that manages per-user containerized sandboxes using Kuber
 - **RBAC**: Configure ServiceAccount with necessary permissions to manage Kubernetes resources
 
 ### API Endpoints
-- `POST /sandbox/{userId}` - Create user sandbox
-- `DELETE /sandbox/{userId}` - Delete user sandbox
-- **Access via**: `https://api.{domain}/sandbox/{userId}`
+- `POST /v1/sandbox/{userId}` - Create user sandbox
+- `DELETE /v1/sandbox/{userId}` - Delete user sandbox
+- **Access via**: `https://api.{domain}/v1/sandbox/{userId}`
 
 ## Expected Deliverables
 1. **Dockerfile** for containerizing the Golang service
