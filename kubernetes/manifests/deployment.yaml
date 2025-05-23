@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8sgo
+  labels:
+    app: k8sgo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: k8sgo
+  template:
+    metadata:
+      labels:
+        app: k8sgo
+    spec:
+      serviceAccountName: k8sgo-sa
+      containers:
+      - name: k8sgo
+        image: shanurcsenitap/irisk8s:amd64
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 5

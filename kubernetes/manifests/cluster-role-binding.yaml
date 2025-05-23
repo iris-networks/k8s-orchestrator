@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: k8sgo-rolebinding
+subjects:
+- kind: ServiceAccount
+  name: k8sgo-sa
+  namespace: default
+roleRef:
+  kind: ClusterRole
+  name: k8sgo-role
+  apiGroup: rbac.authorization.k8s.io
