@@ -1,0 +1,96 @@
+## Traefik Helm Chart values for tryiris.dev with Cloudflare integration
+
+# Enable the dashboard
+dashboard:
+  enabled: true
+
+# Deploy Traefik as a Deployment
+deployment:
+  enabled: true
+  replicas: 1
+  initContainers:
+    - name: volume-permissions
+      image: busybox:latest
+      command: ["sh", "-c", "touch /data/acme.json; chmod -v 600 /data/acme.json"]
+      volumeMounts:
+        - mountPath: /data
+          name: data
+
+# Ports configuration
+ports:
+  web:
+    port: 8000
+    exposedPort: 80
+    expose: {}
+    protocol: TCP
+  websecure:
+    port: 8443
+    exposedPort: 443
+    expose: {}
+    protocol: TCP
+    # Enable TLS
+    tls:
+      enabled: true
+      # Enable Cloudflare TLS certificate validation
+      certResolver: cloudflare
+
+# Security context to fix permissions
+securityContext:
+  capabilities:
+    drop: [ALL]
+  readOnlyRootFilesystem: true
+  runAsGroup: 65532
+  runAsNonRoot: true
+  runAsUser: 65532
+
+# Configure providers
+providers:
+  kubernetesIngress:
+    enabled: true
+    allowExternalNameServices: true
+  kubernetesCRD:
+    enabled: true
+
+# Add EntryPoints
+entryPoints:
+  web:
+    address: ":80"
+    # Redirect to HTTPS
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+  websecure:
+    address: ":443"
+
+# Set up certificate resolvers for Let's Encrypt with Cloudflare DNS challenge
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: admin@tryiris.dev
+      storage: /data/acme.json
+      httpChallenge:
+        entryPoint: web
+
+# Environment variables
+env: []
+
+# Persistent volume for acme.json
+persistence:
+  enabled: true
+  accessMode: ReadWriteOnce
+  size: 128Mi
+  path: /data
+
+
+podSecurityContext:
+  fsGroup: 65532
+  fsGroupChangePolicy: "OnRootMismatch"
+
+# Kubernetes Ingress Settings
+ingressRoute:
+  dashboard:
+    enabled: true
+    annotations:
+      kubernetes.io/ingress.class: traefik

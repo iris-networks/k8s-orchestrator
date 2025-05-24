@@ -5,7 +5,7 @@ APP_NAME := k8sgo
 DOCKER_IMAGE := shanurcsenitap/irisk8s
 DOCKER_TAG := latest
 DOCKER_FULL_IMAGE := $(DOCKER_IMAGE):$(DOCKER_TAG)
-PLATFORMS := linux/amd64,linux/arm64
+PLATFORMS := linux/amd64
 
 # Go related variables
 GOBASE := $(shell pwd)

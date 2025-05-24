@@ -9,6 +9,17 @@ type Response struct {
 	UserID string `json:"userId" example:"user123"`
 }
 
+// SandboxResponse is the response for sandbox creation with Traefik integration
+// @Description Sandbox creation response with URLs
+type SandboxResponse struct {
+	// Embed the standard response
+	Response
+	// VNC URL for the sandbox
+	VncURL string `json:"vncUrl" example:"https://user123-vnc.tryiris.dev"`
+	// API URL for the sandbox
+	ApiURL string `json:"apiUrl" example:"https://user123-api.tryiris.dev"`
+}
+
 // ErrorResponse is the standard error response
 // @Description Standard API error response
 type ErrorResponse struct {

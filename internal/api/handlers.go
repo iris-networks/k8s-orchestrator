@@ -7,14 +7,26 @@ import (
 	"github.com/shanurcsenitap/irisk8s/internal/k8s"
 )
 
-// SandboxHandler manages sandbox operations
+// SandboxHandler manages sandbox operations with the base Kubernetes client
 type SandboxHandler struct {
 	k8sClient *k8s.Client
 }
 
-// NewSandboxHandler creates a new sandbox handler
+// NewSandboxHandler creates a new sandbox handler with the base Kubernetes client
 func NewSandboxHandler(k8sClient *k8s.Client) *SandboxHandler {
 	return &SandboxHandler{
+		k8sClient: k8sClient,
+	}
+}
+
+// SandboxHandlerWithTraefik manages sandbox operations with Traefik integration
+type SandboxHandlerWithTraefik struct {
+	k8sClient *k8s.ClientWithTraefik
+}
+
+// NewSandboxHandlerWithTraefik creates a new sandbox handler with Traefik integration
+func NewSandboxHandlerWithTraefik(k8sClient *k8s.ClientWithTraefik) *SandboxHandlerWithTraefik {
+	return &SandboxHandlerWithTraefik{
 		k8sClient: k8sClient,
 	}
 }
@@ -65,6 +77,82 @@ func (h *SandboxHandler) CreateSandbox(c *gin.Context) {
 // @Failure      500 {object} ErrorResponse
 // @Router       /v1/sandbox/{userId} [delete]
 func (h *SandboxHandler) DeleteSandbox(c *gin.Context) {
+	userID := c.Param("userId")
+	if userID == "" {
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error: "User ID is required",
+		})
+		return
+	}
+
+	err := h.k8sClient.DeleteSandbox(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error: err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, Response{
+		Message: "Sandbox deleted successfully",
+		UserID:  userID,
+	})
+}
+
+// CreateSandbox creates a new sandbox for a user with Traefik integration
+// @Summary      Create a user sandbox with Traefik routing
+// @Description  Creates a new containerized sandbox for a specific user with Traefik IngressRoutes
+// @Tags         sandbox
+// @Accept       json
+// @Produce      json
+// @Param        userId path string true "User ID"
+// @Success      201 {object} SandboxResponse
+// @Failure      400 {object} ErrorResponse
+// @Failure      500 {object} ErrorResponse
+// @Router       /v1/sandbox/{userId} [post]
+func (h *SandboxHandlerWithTraefik) CreateSandbox(c *gin.Context) {
+	userID := c.Param("userId")
+	if userID == "" {
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error: "User ID is required",
+		})
+		return
+	}
+
+	err := h.k8sClient.CreateSandbox(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error: err.Error(),
+		})
+		return
+	}
+
+	// Return response with VNC and API URLs
+	vncURL := "https://" + userID + "-vnc.tryiris.dev"
+	apiURL := "https://" + userID + "-api.tryiris.dev"
+
+	c.JSON(http.StatusCreated, SandboxResponse{
+		Response: Response{
+			Message: "Sandbox created successfully",
+			UserID:  userID,
+		},
+		VncURL: vncURL,
+		ApiURL: apiURL,
+	})
+}
+
+// DeleteSandbox deletes a user's sandbox with Traefik integration
+// @Summary      Delete a user sandbox with Traefik routing
+// @Description  Deletes a containerized sandbox for a specific user including Traefik IngressRoutes
+// @Tags         sandbox
+// @Accept       json
+// @Produce      json
+// @Param        userId path string true "User ID"
+// @Success      200 {object} Response
+// @Failure      400 {object} ErrorResponse
+// @Failure      500 {object} ErrorResponse
+// @Router       /v1/sandbox/{userId} [delete]
+func (h *SandboxHandlerWithTraefik) DeleteSandbox(c *gin.Context) {
 	userID := c.Param("userId")
 	if userID == "" {
 		c.JSON(http.StatusBadRequest, ErrorResponse{

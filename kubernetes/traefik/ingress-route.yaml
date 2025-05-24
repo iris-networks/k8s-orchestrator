@@ -1,0 +1,16 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: k8sgo-api
+  namespace: default
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`api.tryiris.dev`)
+      kind: Rule
+      services:
+        - name: k8sgo
+          port: 80
+  tls:
+    certResolver: letsencrypt

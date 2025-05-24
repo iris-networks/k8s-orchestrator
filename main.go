@@ -19,8 +19,8 @@ import (
 
 
 func main() {
-	// Initialize Kubernetes client
-	k8sClient, err := k8s.NewClient()
+	// Initialize Kubernetes client with Traefik support
+	k8sClient, err := k8s.NewClientWithTraefik()
 	if err != nil {
 		log.Fatalf("Failed to create Kubernetes client: %v", err)
 	}
@@ -28,8 +28,8 @@ func main() {
 	// Initialize router
 	router := gin.Default()
 
-	// Register routes
-	api.RegisterRoutes(router, k8sClient)
+	// Register routes with Traefik-enabled client
+	api.RegisterRoutesWithTraefik(router, k8sClient)
 
 	// Swagger documentation
 	url := ginSwagger.URL("/swagger/doc.json") // The URL pointing to API definition

@@ -17,7 +17,7 @@ const docTemplate = `{
     "paths": {
         "/v1/sandbox/{userId}": {
             "post": {
-                "description": "Creates a new containerized sandbox for a specific user",
+                "description": "Creates a new containerized sandbox for a specific user with Traefik IngressRoutes",
                 "consumes": [
                     "application/json"
                 ],
@@ -27,7 +27,7 @@ const docTemplate = `{
                 "tags": [
                     "sandbox"
                 ],
-                "summary": "Create a user sandbox",
+                "summary": "Create a user sandbox with Traefik routing",
                 "parameters": [
                     {
                         "type": "string",
@@ -41,7 +41,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/api.Response"
+                            "$ref": "#/definitions/api.SandboxResponse"
                         }
                     },
                     "400": {
@@ -59,7 +59,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Deletes a containerized sandbox for a specific user",
+                "description": "Deletes a containerized sandbox for a specific user including Traefik IngressRoutes",
                 "consumes": [
                     "application/json"
                 ],
@@ -69,7 +69,7 @@ const docTemplate = `{
                 "tags": [
                     "sandbox"
                 ],
-                "summary": "Delete a user sandbox",
+                "summary": "Delete a user sandbox with Traefik routing",
                 "parameters": [
                     {
                         "type": "string",
@@ -127,6 +127,32 @@ const docTemplate = `{
                     "description": "User ID",
                     "type": "string",
                     "example": "user123"
+                }
+            }
+        },
+        "api.SandboxResponse": {
+            "description": "Sandbox creation response with URLs",
+            "type": "object",
+            "properties": {
+                "apiUrl": {
+                    "description": "API URL for the sandbox",
+                    "type": "string",
+                    "example": "https://user123-api.tryiris.dev"
+                },
+                "message": {
+                    "description": "Response message",
+                    "type": "string",
+                    "example": "Sandbox created successfully"
+                },
+                "userId": {
+                    "description": "User ID",
+                    "type": "string",
+                    "example": "user123"
+                },
+                "vncUrl": {
+                    "description": "VNC URL for the sandbox",
+                    "type": "string",
+                    "example": "https://user123-vnc.tryiris.dev"
                 }
             }
         }
