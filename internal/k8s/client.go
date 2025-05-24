@@ -156,7 +156,7 @@ func (c *Client) createPVC(ctx context.Context, userID string) error {
 		return nil
 	}
 
-	storageClassName := ""
+	storageClassName := "standard-rwo" // Use the default storage class
 	// Create PVC
 	pvc := &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{
