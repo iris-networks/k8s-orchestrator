@@ -79,10 +79,8 @@ func (c *ClientWithTraefik) createVncIngressRoute(ctx context.Context, userID st
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-vnc", userID),
 			Namespace: c.namespace,
-			Annotations: map[string]string{
-				"external-dns.alpha.kubernetes.io/target": "traefik.tryiris.dev",
-				"external-dns.alpha.kubernetes.io/ttl":    "60",
-			},
+			// External-DNS annotations have been removed
+			Annotations: map[string]string{},
 		},
 		Spec: IngressRouteSpec{
 			EntryPoints: []string{"websecure"},
@@ -129,10 +127,8 @@ func (c *ClientWithTraefik) createApiIngressRoute(ctx context.Context, userID st
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-api", userID),
 			Namespace: c.namespace,
-			Annotations: map[string]string{
-				"external-dns.alpha.kubernetes.io/target": "traefik.tryiris.dev",
-				"external-dns.alpha.kubernetes.io/ttl":    "60",
-			},
+			// External-DNS annotations have been removed
+			Annotations: map[string]string{},
 		},
 		Spec: IngressRouteSpec{
 			EntryPoints: []string{"websecure"},
