@@ -3,12 +3,6 @@ kind: ClusterRole
 metadata:
   name: k8sgo-role
 rules:
-- apiGroups: [""]
-  resources: ["namespaces", "services", "persistentvolumeclaims"]
-  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-- apiGroups: ["apps"]
-  resources: ["deployments"]
-  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-- apiGroups: ["networking.k8s.io"]
-  resources: ["ingresses"]
-  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: ["traefik.io"]
+  resources: ["ingressroutes"]
+  verbs: ["create", "get", "list", "watch", "update", "delete"]
