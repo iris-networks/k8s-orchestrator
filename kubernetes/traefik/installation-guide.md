@@ -1,6 +1,6 @@
-# Traefik and External-DNS Installation Guide
+# Traefik Installation Guide
 
-This guide explains how to set up Traefik and External-DNS for the k8sgo application to enable routing to the management API and dynamic subdomain provisioning for user sandboxes.
+This guide explains how to set up Traefik for the k8sgo application to enable routing to the management API and dynamic subdomain provisioning for user sandboxes.
 
 ## Prerequisites
 
@@ -30,14 +30,9 @@ helm repo update
 helm install traefik traefik/traefik --values kubernetes/traefik/values.yaml
 ```
 
-### Step 3: Install External-DNS
+<!-- External-DNS section removed as it's no longer used -->
 
-```bash
-# Apply the External-DNS deployment
-kubectl apply -f kubernetes/external-dns/deployment.yaml
-```
-
-### Step 4: Create the IngressRoute for k8sgo API
+### Step 3: Create the IngressRoute for k8sgo API
 
 ```bash
 # Apply the IngressRoute for api.tryiris.dev
@@ -53,9 +48,9 @@ The k8sgo application will automatically create IngressRoute resources for each 
 
 ### Implementation Details:
 
-1. **Automatic DNS Configuration**:
-   - External-DNS will detect the IngressRoute resources and create the necessary DNS records in Cloudflare
-   - The records will point to the Traefik ingress controller
+1. **DNS Configuration**:
+   - You will need to manually configure DNS records in Cloudflare
+   - The records should point to the Traefik ingress controller
 
 2. **TLS Certificates**:
    - Traefik will use Let's Encrypt with Cloudflare DNS challenge to obtain TLS certificates
@@ -66,14 +61,14 @@ The k8sgo application will automatically create IngressRoute resources for each 
      - Kubernetes Deployment
      - Kubernetes Service
      - Two Traefik IngressRoute resources (VNC and API)
-   - External-DNS will automatically create the necessary DNS records
+   - You will need to manually configure DNS records as needed
 
 4. **User Sandbox Deletion**:
    - When a user sandbox is deleted, the k8sgo application will delete:
      - Kubernetes Deployment
      - Kubernetes Service
      - Two Traefik IngressRoute resources (VNC and API)
-   - External-DNS will automatically delete the DNS records
+   - You will need to manually delete DNS records as needed
 
 ## Testing the Setup
 

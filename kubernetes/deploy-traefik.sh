@@ -52,13 +52,8 @@ helm upgrade --install traefik traefik/traefik \
 print_message "Waiting for Traefik pods to be ready..."
 kubectl rollout status deployment/traefik
 
-# Apply external-dns deployment
-print_message "Deploying External-DNS..."
-kubectl apply -f kubernetes/external-dns/deployment.yaml
-
-# Wait for external-dns to be ready
-print_message "Waiting for External-DNS pods to be ready..."
-kubectl rollout status deployment/external-dns
+# External-DNS deployment has been removed
+print_message "External-DNS is no longer used, skipping..."
 
 # Apply the IngressRoute for k8sgo API
 print_message "Creating IngressRoute for api.tryiris.dev..."
