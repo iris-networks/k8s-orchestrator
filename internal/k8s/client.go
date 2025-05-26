@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"path/filepath"
+	"strings"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -67,7 +68,7 @@ func NewClient() (*Client, error) {
 }
 
 // CreateSandbox creates a new sandbox for a user
-func (c *Client) CreateSandbox(userID string) error {
+func (c *Client) CreateSandbox(userID string, envVars map[string]string) error {
 	ctx := context.Background()
 
 	// Create namespace if it doesn't exist
@@ -80,8 +81,8 @@ func (c *Client) CreateSandbox(userID string) error {
 		return err
 	}
 
-	// Create deployment
-	if err := c.createDeployment(ctx, userID); err != nil {
+	// Create deployment with environment variables
+	if err := c.createDeployment(ctx, userID, envVars); err != nil {
 		return err
 	}
 
@@ -187,11 +188,27 @@ func (c *Client) createPVC(ctx context.Context, userID string) error {
 }
 
 // createDeployment creates a deployment for the user's sandbox
-func (c *Client) createDeployment(ctx context.Context, userID string) error {
+func (c *Client) createDeployment(ctx context.Context, userID string, envVars map[string]string) error {
 	deploymentName := fmt.Sprintf("%s-deployment", userID)
-	
+
 	// Create deployment
 	var replicas int32 = 1
+
+	// Convert map of environment variables to Kubernetes EnvVar slice
+	var envVarSlice []corev1.EnvVar
+	for key, value := range envVars {
+		envVarSlice = append(envVarSlice, corev1.EnvVar{
+			Name:  key,
+			Value: value,
+		})
+	}
+
+	// Always include the USER_ID environment variable
+	envVarSlice = append(envVarSlice, corev1.EnvVar{
+		Name:  "USER_ID",
+		Value: userID,
+	})
+
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: deploymentName,
@@ -215,7 +232,7 @@ func (c *Client) createDeployment(ctx context.Context, userID string) error {
 					Containers: []corev1.Container{
 						{
 							Name:  "sandbox",
-							Image: "accetto/ubuntu-vnc-xfce-firefox-g3",
+							Image: "shanurcsenitap/iris_agent:latest",
 							Ports: []corev1.ContainerPort{
 								{
 									ContainerPort: 6901,
@@ -226,6 +243,7 @@ func (c *Client) createDeployment(ctx context.Context, userID string) error {
 									Name:          "http",
 								},
 							},
+							Env:          envVarSlice,
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "user-data",
@@ -361,20 +379,29 @@ func (c *Client) createIngress(ctx context.Context, userID string) error {
 
 // ListSandboxes retrieves all sandboxes in the namespace
 func (c *Client) ListSandboxes(ctx context.Context) ([]SandboxInfo, error) {
-	// Get all deployments in the namespace with the app=user-sandbox label
-	deployments, err := c.clientset.AppsV1().Deployments(c.namespace).List(ctx, metav1.ListOptions{
-		LabelSelector: "app=user-sandbox",
-	})
+	// Get all deployments in the namespace without filtering by label
+	deployments, err := c.clientset.AppsV1().Deployments(c.namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list deployments: %w", err)
 	}
 
 	sandboxes := make([]SandboxInfo, 0, len(deployments.Items))
 	for _, deployment := range deployments.Items {
-		// Extract user ID from deployment labels
+		// For each deployment, try to extract a user ID
+		// First try from the "user" label
 		userID := deployment.Labels["user"]
+
+		// If not found, check if the deployment name follows the pattern "{userId}-deployment"
 		if userID == "" {
-			// Skip deployments without a user ID
+			// Try to extract from deployment name (format: {userId}-deployment)
+			name := deployment.Name
+			if strings.HasSuffix(name, "-deployment") {
+				userID = strings.TrimSuffix(name, "-deployment")
+			}
+		}
+
+		// If we still couldn't determine the user ID, skip this deployment
+		if userID == "" {
 			continue
 		}
 

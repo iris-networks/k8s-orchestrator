@@ -32,6 +32,20 @@ definitions:
           $ref: '#/definitions/k8s.SandboxInfo'
         type: array
     type: object
+  api.SandboxRequest:
+    description: Request to create a new sandbox with optional environment variables.
+    properties:
+      envVars:
+        additionalProperties:
+          type: string
+        description: |-
+          EnvVars contains key-value pairs of environment variables to pass to the container.
+          Example: {"DEBUG":"true", "API_KEY":"abc123"}
+        example:
+          ' "API_KEY"': '"abc123"}'
+          '{"DEBUG"': '"true"'
+        type: object
+    type: object
   api.SandboxResponse:
     description: Sandbox creation response with URLs
     properties:
@@ -108,6 +122,11 @@ paths:
         name: userId
         required: true
         type: string
+      - description: Environment variables to pass to the container
+        in: body
+        name: request
+        schema:
+          $ref: '#/definitions/api.SandboxRequest'
       produces:
       - application/json
       responses:

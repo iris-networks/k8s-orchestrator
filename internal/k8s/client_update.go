@@ -182,7 +182,7 @@ func (c *ClientWithTraefik) deleteIngressRoutes(ctx context.Context, userID stri
 }
 
 // CreateSandbox creates a new sandbox for a user with Traefik IngressRoutes
-func (c *ClientWithTraefik) CreateSandbox(userID string) error {
+func (c *ClientWithTraefik) CreateSandbox(userID string, envVars map[string]string) error {
 	ctx := context.Background()
 
 	// Create namespace if it doesn't exist
@@ -195,8 +195,8 @@ func (c *ClientWithTraefik) CreateSandbox(userID string) error {
 		return err
 	}
 
-	// Create deployment
-	if err := c.createDeployment(ctx, userID); err != nil {
+	// Create deployment with environment variables
+	if err := c.createDeployment(ctx, userID, envVars); err != nil {
 		return err
 	}
 

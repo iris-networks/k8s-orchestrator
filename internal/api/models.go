@@ -11,6 +11,14 @@ type Response struct {
 	UserID string `json:"userId" example:"user123"`
 }
 
+// SandboxRequest represents a request to create a new sandbox.
+// @Description Request to create a new sandbox with optional environment variables.
+type SandboxRequest struct {
+	// EnvVars contains key-value pairs of environment variables to pass to the container.
+	// Example: {"DEBUG":"true", "API_KEY":"abc123"}
+	EnvVars map[string]string `json:"envVars,omitempty" example:"{\"DEBUG\":\"true\", \"API_KEY\":\"abc123\"}"`
+}
+
 // SandboxResponse is the response for sandbox creation with Traefik integration
 // @Description Sandbox creation response with URLs
 type SandboxResponse struct {

@@ -35,6 +35,14 @@ const docTemplate = `{
                         "name": "userId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Environment variables to pass to the container",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/api.SandboxRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -173,6 +181,23 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/k8s.SandboxInfo"
+                    }
+                }
+            }
+        },
+        "api.SandboxRequest": {
+            "description": "Request to create a new sandbox with optional environment variables.",
+            "type": "object",
+            "properties": {
+                "envVars": {
+                    "description": "EnvVars contains key-value pairs of environment variables to pass to the container.\nExample: {\"DEBUG\":\"true\", \"API_KEY\":\"abc123\"}",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "example": {
+                        " \"API_KEY\"": "\"abc123\"}",
+                        "{\"DEBUG\"": "\"true\""
                     }
                 }
             }
