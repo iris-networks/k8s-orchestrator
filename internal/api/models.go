@@ -1,5 +1,7 @@
 package api
 
+import "github.com/shanurcsenitap/irisk8s/internal/k8s"
+
 // Response is the standard success response
 // @Description Standard API success response
 type Response struct {
@@ -18,6 +20,15 @@ type SandboxResponse struct {
 	VncURL string `json:"vncUrl" example:"https://user123-vnc.tryiris.dev"`
 	// API URL for the sandbox
 	ApiURL string `json:"apiUrl" example:"https://user123-api.tryiris.dev"`
+}
+
+// SandboxListResponse is the response for listing all sandboxes
+// @Description List of all sandboxes
+type SandboxListResponse struct {
+	// Count of sandboxes
+	Count int `json:"count" example:"3"`
+	// List of sandboxes
+	Sandboxes []k8s.SandboxInfo `json:"sandboxes"`
 }
 
 // ErrorResponse is the standard error response

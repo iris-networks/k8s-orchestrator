@@ -19,6 +19,32 @@ func NewSandboxHandler(k8sClient *k8s.Client) *SandboxHandler {
 	}
 }
 
+// ListSandboxes lists all sandboxes
+// @Summary      List all sandboxes
+// @Description  Retrieves a list of all sandboxes with their status
+// @Tags         sandbox
+// @Accept       json
+// @Produce      json
+// @Success      200 {object} SandboxListResponse
+// @Failure      500 {object} ErrorResponse
+// @Router       /v1/sandboxes [get]
+func (h *SandboxHandler) ListSandboxes(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	sandboxes, err := h.k8sClient.ListSandboxes(ctx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error: err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, SandboxListResponse{
+		Count:     len(sandboxes),
+		Sandboxes: sandboxes,
+	})
+}
+
 // SandboxHandlerWithTraefik manages sandbox operations with Traefik integration
 type SandboxHandlerWithTraefik struct {
 	k8sClient *k8s.ClientWithTraefik
@@ -29,6 +55,32 @@ func NewSandboxHandlerWithTraefik(k8sClient *k8s.ClientWithTraefik) *SandboxHand
 	return &SandboxHandlerWithTraefik{
 		k8sClient: k8sClient,
 	}
+}
+
+// ListSandboxes lists all sandboxes with Traefik integration
+// @Summary      List all sandboxes with Traefik routing
+// @Description  Retrieves a list of all sandboxes with their status
+// @Tags         sandbox
+// @Accept       json
+// @Produce      json
+// @Success      200 {object} SandboxListResponse
+// @Failure      500 {object} ErrorResponse
+// @Router       /v1/sandboxes [get]
+func (h *SandboxHandlerWithTraefik) ListSandboxes(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	sandboxes, err := h.k8sClient.ListSandboxes(ctx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error: err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, SandboxListResponse{
+		Count:     len(sandboxes),
+		Sandboxes: sandboxes,
+	})
 }
 
 // CreateSandbox creates a new sandbox for a user

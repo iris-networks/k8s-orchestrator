@@ -25,6 +25,13 @@ type Client struct {
 	domain    string
 }
 
+// SandboxInfo contains information about a sandbox
+type SandboxInfo struct {
+	UserID    string `json:"userId" example:"user123"`
+	Status    string `json:"status" example:"Running"`
+	CreatedAt string `json:"createdAt" example:"2023-04-20T12:00:00Z"`
+}
+
 // NewClient creates a new Kubernetes client
 func NewClient() (*Client, error) {
 	var config *rest.Config
@@ -291,7 +298,7 @@ func (c *Client) createService(ctx context.Context, userID string) error {
 // createIngress creates an ingress for the user's sandbox
 func (c *Client) createIngress(ctx context.Context, userID string) error {
 	ingressName := fmt.Sprintf("%s-ingress", userID)
-	
+
 	pathTypePrefix := networkingv1.PathTypePrefix
 	ingress := &networkingv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
@@ -350,4 +357,46 @@ func (c *Client) createIngress(ctx context.Context, userID string) error {
 
 	_, err := c.clientset.NetworkingV1().Ingresses(c.namespace).Create(ctx, ingress, metav1.CreateOptions{})
 	return err
+}
+
+// ListSandboxes retrieves all sandboxes in the namespace
+func (c *Client) ListSandboxes(ctx context.Context) ([]SandboxInfo, error) {
+	// Get all deployments in the namespace with the app=user-sandbox label
+	deployments, err := c.clientset.AppsV1().Deployments(c.namespace).List(ctx, metav1.ListOptions{
+		LabelSelector: "app=user-sandbox",
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list deployments: %w", err)
+	}
+
+	sandboxes := make([]SandboxInfo, 0, len(deployments.Items))
+	for _, deployment := range deployments.Items {
+		// Extract user ID from deployment labels
+		userID := deployment.Labels["user"]
+		if userID == "" {
+			// Skip deployments without a user ID
+			continue
+		}
+
+		// Check deployment status
+		status := "Unknown"
+		if deployment.Status.AvailableReplicas > 0 {
+			status = "Running"
+		} else if deployment.Status.UnavailableReplicas > 0 {
+			status = "Unavailable"
+		} else if deployment.Status.ReadyReplicas == 0 {
+			status = "Pending"
+		}
+
+		// Get creation timestamp
+		createdAt := deployment.CreationTimestamp.Format(metav1.RFC3339Micro)
+
+		sandboxes = append(sandboxes, SandboxInfo{
+			UserID:    userID,
+			Status:    status,
+			CreatedAt: createdAt,
+		})
+	}
+
+	return sandboxes, nil
 }

@@ -100,6 +100,35 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/v1/sandboxes": {
+            "get": {
+                "description": "Retrieves a list of all sandboxes with their status",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sandbox"
+                ],
+                "summary": "List all sandboxes with Traefik routing",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.SandboxListResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -130,6 +159,24 @@ const docTemplate = `{
                 }
             }
         },
+        "api.SandboxListResponse": {
+            "description": "List of all sandboxes",
+            "type": "object",
+            "properties": {
+                "count": {
+                    "description": "Count of sandboxes",
+                    "type": "integer",
+                    "example": 3
+                },
+                "sandboxes": {
+                    "description": "List of sandboxes",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/k8s.SandboxInfo"
+                    }
+                }
+            }
+        },
         "api.SandboxResponse": {
             "description": "Sandbox creation response with URLs",
             "type": "object",
@@ -153,6 +200,23 @@ const docTemplate = `{
                     "description": "VNC URL for the sandbox",
                     "type": "string",
                     "example": "https://user123-vnc.tryiris.dev"
+                }
+            }
+        },
+        "k8s.SandboxInfo": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string",
+                    "example": "2023-04-20T12:00:00Z"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "Running"
+                },
+                "userId": {
+                    "type": "string",
+                    "example": "user123"
                 }
             }
         }
