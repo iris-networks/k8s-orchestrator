@@ -19,6 +19,33 @@ definitions:
         example: user123
         type: string
     type: object
+  api.SandboxListResponse:
+    description: List of all sandboxes
+    properties:
+      count:
+        description: Count of sandboxes
+        example: 3
+        type: integer
+      sandboxes:
+        description: List of sandboxes
+        items:
+          $ref: '#/definitions/k8s.SandboxInfo'
+        type: array
+    type: object
+  api.SandboxRequest:
+    description: Request to create a new sandbox with optional environment variables.
+    properties:
+      envVars:
+        additionalProperties:
+          type: string
+        description: |-
+          EnvVars contains key-value pairs of environment variables to pass to the container.
+          Example: {"DEBUG":"true", "API_KEY":"abc123"}
+        example:
+          ' "API_KEY"': '"abc123"}'
+          '{"DEBUG"': '"true"'
+        type: object
+    type: object
   api.SandboxResponse:
     description: Sandbox creation response with URLs
     properties:
@@ -37,6 +64,18 @@ definitions:
       vncUrl:
         description: VNC URL for the sandbox
         example: https://user123-vnc.tryiris.dev
+        type: string
+    type: object
+  k8s.SandboxInfo:
+    properties:
+      createdAt:
+        example: "2023-04-20T12:00:00Z"
+        type: string
+      status:
+        example: Running
+        type: string
+      userId:
+        example: user123
         type: string
     type: object
 info:
@@ -83,6 +122,11 @@ paths:
         name: userId
         required: true
         type: string
+      - description: Environment variables to pass to the container
+        in: body
+        name: request
+        schema:
+          $ref: '#/definitions/api.SandboxRequest'
       produces:
       - application/json
       responses:
@@ -99,6 +143,25 @@ paths:
           schema:
             $ref: '#/definitions/api.ErrorResponse'
       summary: Create a user sandbox with Traefik routing
+      tags:
+      - sandbox
+  /v1/sandboxes:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a list of all sandboxes with their status
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.SandboxListResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: List all sandboxes with Traefik routing
       tags:
       - sandbox
 swagger: "2.0"

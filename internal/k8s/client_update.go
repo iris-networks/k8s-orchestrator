@@ -182,7 +182,7 @@ func (c *ClientWithTraefik) deleteIngressRoutes(ctx context.Context, userID stri
 }
 
 // CreateSandbox creates a new sandbox for a user with Traefik IngressRoutes
-func (c *ClientWithTraefik) CreateSandbox(userID string) error {
+func (c *ClientWithTraefik) CreateSandbox(userID string, envVars map[string]string) error {
 	ctx := context.Background()
 
 	// Create namespace if it doesn't exist
@@ -195,8 +195,8 @@ func (c *ClientWithTraefik) CreateSandbox(userID string) error {
 		return err
 	}
 
-	// Create deployment
-	if err := c.createDeployment(ctx, userID); err != nil {
+	// Create deployment with environment variables
+	if err := c.createDeployment(ctx, userID, envVars); err != nil {
 		return err
 	}
 
@@ -224,13 +224,13 @@ func (c *ClientWithTraefik) DeleteSandbox(userID string) error {
 	}
 
 	// Delete service
-	if err := c.clientset.CoreV1().Services(c.namespace).Delete(ctx, 
+	if err := c.clientset.CoreV1().Services(c.namespace).Delete(ctx,
 		fmt.Sprintf("%s-service", userID), metav1.DeleteOptions{}); err != nil {
 		log.Printf("Error deleting service: %v", err)
 	}
 
 	// Delete deployment
-	if err := c.clientset.AppsV1().Deployments(c.namespace).Delete(ctx, 
+	if err := c.clientset.AppsV1().Deployments(c.namespace).Delete(ctx,
 		fmt.Sprintf("%s-deployment", userID), metav1.DeleteOptions{}); err != nil {
 		log.Printf("Error deleting deployment: %v", err)
 	}
@@ -238,7 +238,7 @@ func (c *ClientWithTraefik) DeleteSandbox(userID string) error {
 	// Keep PVC for now (user data persistence)
 	// Uncomment to delete PVC as well
 	/*
-	if err := c.clientset.CoreV1().PersistentVolumeClaims(c.namespace).Delete(ctx, 
+	if err := c.clientset.CoreV1().PersistentVolumeClaims(c.namespace).Delete(ctx,
 		fmt.Sprintf("%s-pvc", userID), metav1.DeleteOptions{}); err != nil {
 		log.Printf("Error deleting PVC: %v", err)
 	}
@@ -246,6 +246,12 @@ func (c *ClientWithTraefik) DeleteSandbox(userID string) error {
 
 	log.Printf("Sandbox deleted for user: %s", userID)
 	return nil
+}
+
+// ListSandboxes retrieves all sandboxes in the namespace
+func (c *ClientWithTraefik) ListSandboxes(ctx context.Context) ([]SandboxInfo, error) {
+	// Reuse the base client's implementation
+	return c.Client.ListSandboxes(ctx)
 }
 
 // Helper function to convert a struct to unstructured.Unstructured

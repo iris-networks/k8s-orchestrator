@@ -1,5 +1,7 @@
 package api
 
+import "github.com/shanurcsenitap/irisk8s/internal/k8s"
+
 // Response is the standard success response
 // @Description Standard API success response
 type Response struct {
@@ -7,6 +9,14 @@ type Response struct {
 	Message string `json:"message" example:"Sandbox created successfully"`
 	// User ID
 	UserID string `json:"userId" example:"user123"`
+}
+
+// SandboxRequest represents a request to create a new sandbox.
+// @Description Request to create a new sandbox with optional environment variables.
+type SandboxRequest struct {
+	// EnvVars contains key-value pairs of environment variables to pass to the container.
+	// Example: {"DEBUG":"true", "API_KEY":"abc123"}
+	EnvVars map[string]string `json:"envVars,omitempty" example:"{\"DEBUG\":\"true\", \"API_KEY\":\"abc123\"}"`
 }
 
 // SandboxResponse is the response for sandbox creation with Traefik integration
@@ -18,6 +28,15 @@ type SandboxResponse struct {
 	VncURL string `json:"vncUrl" example:"https://user123-vnc.tryiris.dev"`
 	// API URL for the sandbox
 	ApiURL string `json:"apiUrl" example:"https://user123-api.tryiris.dev"`
+}
+
+// SandboxListResponse is the response for listing all sandboxes
+// @Description List of all sandboxes
+type SandboxListResponse struct {
+	// Count of sandboxes
+	Count int `json:"count" example:"3"`
+	// List of sandboxes
+	Sandboxes []k8s.SandboxInfo `json:"sandboxes"`
 }
 
 // ErrorResponse is the standard error response

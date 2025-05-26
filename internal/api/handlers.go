@@ -19,6 +19,32 @@ func NewSandboxHandler(k8sClient *k8s.Client) *SandboxHandler {
 	}
 }
 
+// ListSandboxes lists all sandboxes
+// @Summary      List all sandboxes
+// @Description  Retrieves a list of all sandboxes with their status
+// @Tags         sandbox
+// @Accept       json
+// @Produce      json
+// @Success      200 {object} SandboxListResponse
+// @Failure      500 {object} ErrorResponse
+// @Router       /v1/sandboxes [get]
+func (h *SandboxHandler) ListSandboxes(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	sandboxes, err := h.k8sClient.ListSandboxes(ctx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error: err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, SandboxListResponse{
+		Count:     len(sandboxes),
+		Sandboxes: sandboxes,
+	})
+}
+
 // SandboxHandlerWithTraefik manages sandbox operations with Traefik integration
 type SandboxHandlerWithTraefik struct {
 	k8sClient *k8s.ClientWithTraefik
@@ -31,6 +57,32 @@ func NewSandboxHandlerWithTraefik(k8sClient *k8s.ClientWithTraefik) *SandboxHand
 	}
 }
 
+// ListSandboxes lists all sandboxes with Traefik integration
+// @Summary      List all sandboxes with Traefik routing
+// @Description  Retrieves a list of all sandboxes with their status
+// @Tags         sandbox
+// @Accept       json
+// @Produce      json
+// @Success      200 {object} SandboxListResponse
+// @Failure      500 {object} ErrorResponse
+// @Router       /v1/sandboxes [get]
+func (h *SandboxHandlerWithTraefik) ListSandboxes(c *gin.Context) {
+	ctx := c.Request.Context()
+
+	sandboxes, err := h.k8sClient.ListSandboxes(ctx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error: err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, SandboxListResponse{
+		Count:     len(sandboxes),
+		Sandboxes: sandboxes,
+	})
+}
+
 // CreateSandbox creates a new sandbox for a user
 // @Summary      Create a user sandbox
 // @Description  Creates a new containerized sandbox for a specific user
@@ -38,6 +90,7 @@ func NewSandboxHandlerWithTraefik(k8sClient *k8s.ClientWithTraefik) *SandboxHand
 // @Accept       json
 // @Produce      json
 // @Param        userId path string true "User ID"
+// @Param        request body SandboxRequest false "Environment variables to pass to the container"
 // @Success      201 {object} Response
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
@@ -51,7 +104,22 @@ func (h *SandboxHandler) CreateSandbox(c *gin.Context) {
 		return
 	}
 
-	err := h.k8sClient.CreateSandbox(userID)
+	// Parse request body to get environment variables
+	var request SandboxRequest
+	if err := c.ShouldBindJSON(&request); err != nil && err.Error() != "EOF" {
+		// Only return error if it's not an empty body
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error: "Invalid request format: " + err.Error(),
+		})
+		return
+	}
+
+	// Initialize an empty map if no env vars were provided
+	if request.EnvVars == nil {
+		request.EnvVars = make(map[string]string)
+	}
+
+	err := h.k8sClient.CreateSandbox(userID, request.EnvVars)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, ErrorResponse{
 			Error: err.Error(),
@@ -106,6 +174,7 @@ func (h *SandboxHandler) DeleteSandbox(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        userId path string true "User ID"
+// @Param        request body SandboxRequest false "Environment variables to pass to the container"
 // @Success      201 {object} SandboxResponse
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
@@ -119,7 +188,22 @@ func (h *SandboxHandlerWithTraefik) CreateSandbox(c *gin.Context) {
 		return
 	}
 
-	err := h.k8sClient.CreateSandbox(userID)
+	// Parse request body to get environment variables
+	var request SandboxRequest
+	if err := c.ShouldBindJSON(&request); err != nil && err.Error() != "EOF" {
+		// Only return error if it's not an empty body
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error: "Invalid request format: " + err.Error(),
+		})
+		return
+	}
+
+	// Initialize an empty map if no env vars were provided
+	if request.EnvVars == nil {
+		request.EnvVars = make(map[string]string)
+	}
+
+	err := h.k8sClient.CreateSandbox(userID, request.EnvVars)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, ErrorResponse{
 			Error: err.Error(),

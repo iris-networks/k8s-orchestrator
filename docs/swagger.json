@@ -24,6 +24,14 @@
                         "name": "userId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Environment variables to pass to the container",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/api.SandboxRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -89,6 +97,35 @@
                     }
                 }
             }
+        },
+        "/v1/sandboxes": {
+            "get": {
+                "description": "Retrieves a list of all sandboxes with their status",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sandbox"
+                ],
+                "summary": "List all sandboxes with Traefik routing",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.SandboxListResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -119,6 +156,41 @@
                 }
             }
         },
+        "api.SandboxListResponse": {
+            "description": "List of all sandboxes",
+            "type": "object",
+            "properties": {
+                "count": {
+                    "description": "Count of sandboxes",
+                    "type": "integer",
+                    "example": 3
+                },
+                "sandboxes": {
+                    "description": "List of sandboxes",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/k8s.SandboxInfo"
+                    }
+                }
+            }
+        },
+        "api.SandboxRequest": {
+            "description": "Request to create a new sandbox with optional environment variables.",
+            "type": "object",
+            "properties": {
+                "envVars": {
+                    "description": "EnvVars contains key-value pairs of environment variables to pass to the container.\nExample: {\"DEBUG\":\"true\", \"API_KEY\":\"abc123\"}",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "example": {
+                        " \"API_KEY\"": "\"abc123\"}",
+                        "{\"DEBUG\"": "\"true\""
+                    }
+                }
+            }
+        },
         "api.SandboxResponse": {
             "description": "Sandbox creation response with URLs",
             "type": "object",
@@ -142,6 +214,23 @@
                     "description": "VNC URL for the sandbox",
                     "type": "string",
                     "example": "https://user123-vnc.tryiris.dev"
+                }
+            }
+        },
+        "k8s.SandboxInfo": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string",
+                    "example": "2023-04-20T12:00:00Z"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "Running"
+                },
+                "userId": {
+                    "type": "string",
+                    "example": "user123"
                 }
             }
         }
