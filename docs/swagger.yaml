@@ -66,6 +66,26 @@ definitions:
         example: https://user123-vnc.tryiris.dev
         type: string
     type: object
+  api.SandboxStatusResponse:
+    description: Response for sandbox status check
+    properties:
+      createdAt:
+        description: Created timestamp
+        example: "2023-04-20T12:00:00Z"
+        type: string
+      exists:
+        description: Whether the sandbox exists
+        example: true
+        type: boolean
+      status:
+        description: Sandbox status
+        example: Running
+        type: string
+      userId:
+        description: User ID
+        example: user123
+        type: string
+    type: object
   k8s.SandboxInfo:
     properties:
       createdAt:
@@ -143,6 +163,40 @@ paths:
           schema:
             $ref: '#/definitions/api.ErrorResponse'
       summary: Create a user sandbox with Traefik routing
+      tags:
+      - sandbox
+  /v1/sandbox/{userId}/status:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the status of a sandbox for a specific user with Traefik
+        IngressRoutes
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.SandboxStatusResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Get the status of a user sandbox with Traefik routing
       tags:
       - sandbox
   /v1/sandboxes:

@@ -25,6 +25,7 @@ func RegisterRoutes(router *gin.Engine, k8sClient *k8s.Client) {
 		{
 			sandbox.POST("/:userId", sandboxHandler.CreateSandbox)
 			sandbox.DELETE("/:userId", sandboxHandler.DeleteSandbox)
+			sandbox.GET("/:userId/status", sandboxHandler.GetSandboxStatus)
 		}
 
 		// List sandboxes endpoint
@@ -52,6 +53,7 @@ func RegisterRoutesWithTraefik(router *gin.Engine, k8sClient *k8s.ClientWithTrae
 		{
 			sandbox.POST("/:userId", sandboxHandler.CreateSandbox)
 			sandbox.DELETE("/:userId", sandboxHandler.DeleteSandbox)
+			sandbox.GET("/:userId/status", sandboxHandler.GetSandboxStatus)
 		}
 
 		// List sandboxes endpoint
