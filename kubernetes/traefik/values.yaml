@@ -1,4 +1,4 @@
-## Traefik Helm Chart values for tryiris.dev with Cloudflare integration
+## Traefik Helm Chart values for tryiris.dev with Let's Encrypt integration
 
 # Enable the dashboard
 dashboard:
@@ -31,8 +31,8 @@ ports:
     # Enable TLS
     tls:
       enabled: true
-      # Enable Cloudflare TLS certificate validation
-      certResolver: cloudflare
+      # Use Let's Encrypt for TLS certificates
+      certResolver: letsencrypt
 
 # Security context to fix permissions
 securityContext:
@@ -64,7 +64,7 @@ entryPoints:
   websecure:
     address: ":443"
 
-# Set up certificate resolvers for Let's Encrypt with Cloudflare DNS challenge
+# Set up certificate resolvers for Let's Encrypt with HTTP challenge
 certificatesResolvers:
   letsencrypt:
     acme:

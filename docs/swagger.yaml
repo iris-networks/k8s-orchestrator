@@ -45,6 +45,17 @@ definitions:
           ' "API_KEY"': '"abc123"}'
           '{"DEBUG"': '"true"'
         type: object
+      nodeEnvVars:
+        additionalProperties:
+          type: string
+        description: |-
+          NodeEnvVars contains environment variables specifically for the Node.js process.
+          These will be passed only to the Node.js process running as nodeuser.
+          Example: {"NODE_ENV":"production", "PORT":"3000"}
+        example:
+          ' "PORT"': '"3000"}'
+          '{"NODE_ENV"': '"production"'
+        type: object
     type: object
   api.SandboxResponse:
     description: Sandbox creation response with URLs

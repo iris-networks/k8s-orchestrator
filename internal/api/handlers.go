@@ -116,12 +116,15 @@ func (h *SandboxHandler) CreateSandbox(c *gin.Context) {
 		return
 	}
 
-	// Initialize an empty map if no env vars were provided
+	// Initialize empty maps if no env vars were provided
 	if request.EnvVars == nil {
 		request.EnvVars = make(map[string]string)
 	}
+	if request.NodeEnvVars == nil {
+		request.NodeEnvVars = make(map[string]string)
+	}
 
-	err := h.k8sClient.CreateSandbox(userID, request.EnvVars)
+	err := h.k8sClient.CreateSandbox(userID, request.EnvVars, request.NodeEnvVars)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, ErrorResponse{
 			Error: err.Error(),
@@ -200,12 +203,15 @@ func (h *SandboxHandlerWithTraefik) CreateSandbox(c *gin.Context) {
 		return
 	}
 
-	// Initialize an empty map if no env vars were provided
+	// Initialize empty maps if no env vars were provided
 	if request.EnvVars == nil {
 		request.EnvVars = make(map[string]string)
 	}
+	if request.NodeEnvVars == nil {
+		request.NodeEnvVars = make(map[string]string)
+	}
 
-	err := h.k8sClient.CreateSandbox(userID, request.EnvVars)
+	err := h.k8sClient.CreateSandbox(userID, request.EnvVars, request.NodeEnvVars)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, ErrorResponse{
 			Error: err.Error(),

@@ -68,7 +68,7 @@ func NewClient() (*Client, error) {
 }
 
 // CreateSandbox creates a new sandbox for a user
-func (c *Client) CreateSandbox(userID string, envVars map[string]string) error {
+func (c *Client) CreateSandbox(userID string, envVars map[string]string, nodeEnvVars map[string]string) error {
 	ctx := context.Background()
 
 	// Create namespace if it doesn't exist
@@ -81,8 +81,15 @@ func (c *Client) CreateSandbox(userID string, envVars map[string]string) error {
 		return err
 	}
 
+	// Create ConfigMap for Node.js environment variables if provided
+	if len(nodeEnvVars) > 0 {
+		if err := c.createNodeEnvConfigMap(ctx, userID, nodeEnvVars); err != nil {
+			return err
+		}
+	}
+
 	// Create deployment with environment variables
-	if err := c.createDeployment(ctx, userID, envVars); err != nil {
+	if err := c.createDeployment(ctx, userID, envVars, len(nodeEnvVars) > 0); err != nil {
 		return err
 	}
 
@@ -105,27 +112,33 @@ func (c *Client) DeleteSandbox(userID string) error {
 	ctx := context.Background()
 
 	// Delete ingress
-	if err := c.clientset.NetworkingV1().Ingresses(c.namespace).Delete(ctx, 
+	if err := c.clientset.NetworkingV1().Ingresses(c.namespace).Delete(ctx,
 		fmt.Sprintf("%s-ingress", userID), metav1.DeleteOptions{}); err != nil {
 		log.Printf("Error deleting ingress: %v", err)
 	}
 
 	// Delete service
-	if err := c.clientset.CoreV1().Services(c.namespace).Delete(ctx, 
+	if err := c.clientset.CoreV1().Services(c.namespace).Delete(ctx,
 		fmt.Sprintf("%s-service", userID), metav1.DeleteOptions{}); err != nil {
 		log.Printf("Error deleting service: %v", err)
 	}
 
 	// Delete deployment
-	if err := c.clientset.AppsV1().Deployments(c.namespace).Delete(ctx, 
+	if err := c.clientset.AppsV1().Deployments(c.namespace).Delete(ctx,
 		fmt.Sprintf("%s-deployment", userID), metav1.DeleteOptions{}); err != nil {
 		log.Printf("Error deleting deployment: %v", err)
+	}
+
+	// Delete Node.js environment ConfigMap if it exists
+	if err := c.clientset.CoreV1().ConfigMaps(c.namespace).Delete(ctx,
+		fmt.Sprintf("%s-node-env", userID), metav1.DeleteOptions{}); err != nil {
+		log.Printf("Error deleting Node.js env ConfigMap: %v", err)
 	}
 
 	// Keep PVC for now (user data persistence)
 	// Uncomment to delete PVC as well
 	/*
-	if err := c.clientset.CoreV1().PersistentVolumeClaims(c.namespace).Delete(ctx, 
+	if err := c.clientset.CoreV1().PersistentVolumeClaims(c.namespace).Delete(ctx,
 		fmt.Sprintf("%s-pvc", userID), metav1.DeleteOptions{}); err != nil {
 		log.Printf("Error deleting PVC: %v", err)
 	}
@@ -177,7 +190,7 @@ func (c *Client) createPVC(ctx context.Context, userID string) error {
 			StorageClassName: &storageClassName,
 			Resources: corev1.VolumeResourceRequirements{
 				Requests: corev1.ResourceList{
-					corev1.ResourceStorage: resource.MustParse("5Gi"),
+					corev1.ResourceStorage: resource.MustParse("1Gi"),
 				},
 			},
 		},
@@ -187,8 +200,31 @@ func (c *Client) createPVC(ctx context.Context, userID string) error {
 	return err
 }
 
+// createNodeEnvConfigMap creates a ConfigMap for Node.js specific environment variables
+func (c *Client) createNodeEnvConfigMap(ctx context.Context, userID string, nodeEnvVars map[string]string) error {
+	configMapName := fmt.Sprintf("%s-node-env", userID)
+
+	// Convert the environment variables to a .env file format
+	envFileContent := ""
+	for key, value := range nodeEnvVars {
+		envFileContent += fmt.Sprintf("%s=%s\n", key, value)
+	}
+
+	configMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: configMapName,
+		},
+		Data: map[string]string{
+			"node.env": envFileContent,
+		},
+	}
+
+	_, err := c.clientset.CoreV1().ConfigMaps(c.namespace).Create(ctx, configMap, metav1.CreateOptions{})
+	return err
+}
+
 // createDeployment creates a deployment for the user's sandbox
-func (c *Client) createDeployment(ctx context.Context, userID string, envVars map[string]string) error {
+func (c *Client) createDeployment(ctx context.Context, userID string, envVars map[string]string, hasNodeEnv bool) error {
 	deploymentName := fmt.Sprintf("%s-deployment", userID)
 
 	// Create deployment
@@ -208,6 +244,46 @@ func (c *Client) createDeployment(ctx context.Context, userID string, envVars ma
 		Name:  "USER_ID",
 		Value: userID,
 	})
+
+	// Create volume mounts for the container
+	volumeMounts := []corev1.VolumeMount{
+		{
+			Name:      "user-data",
+			MountPath: "/home/nodeuser/.iris",
+		},
+	}
+
+	// Create volumes for the pod
+	volumes := []corev1.Volume{
+		{
+			Name: "user-data",
+			VolumeSource: corev1.VolumeSource{
+				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+					ClaimName: fmt.Sprintf("%s-pvc", userID),
+				},
+			},
+		},
+	}
+
+	// Add Node.js environment variables ConfigMap if needed
+	if hasNodeEnv {
+		volumeMounts = append(volumeMounts, corev1.VolumeMount{
+			Name:      "node-env",
+			MountPath: "/app/.env",
+			SubPath:   "node.env",
+		})
+
+		volumes = append(volumes, corev1.Volume{
+			Name: "node-env",
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: fmt.Sprintf("%s-node-env", userID),
+					},
+				},
+			},
+		})
+	}
 
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -244,12 +320,7 @@ func (c *Client) createDeployment(ctx context.Context, userID string, envVars ma
 								},
 							},
 							Env:          envVarSlice,
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "user-data",
-									MountPath: "/home/headless/Documents",
-								},
-							},
+							VolumeMounts: volumeMounts,
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
 									corev1.ResourceCPU:    resource.MustParse("1"),
@@ -262,16 +333,7 @@ func (c *Client) createDeployment(ctx context.Context, userID string, envVars ma
 							},
 						},
 					},
-					Volumes: []corev1.Volume{
-						{
-							Name: "user-data",
-							VolumeSource: corev1.VolumeSource{
-								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-									ClaimName: fmt.Sprintf("%s-pvc", userID),
-								},
-							},
-						},
-					},
+					Volumes: volumes,
 				},
 			},
 		},

@@ -97,7 +97,7 @@ func (c *ClientWithTraefik) createVncIngressRoute(ctx context.Context, userID st
 				},
 			},
 			TLS: &TLS{
-				CertResolver: "cloudflare",
+				CertResolver: "letsencrypt",
 			},
 		},
 	}
@@ -145,7 +145,7 @@ func (c *ClientWithTraefik) createApiIngressRoute(ctx context.Context, userID st
 				},
 			},
 			TLS: &TLS{
-				CertResolver: "cloudflare",
+				CertResolver: "letsencrypt",
 			},
 		},
 	}
@@ -182,7 +182,7 @@ func (c *ClientWithTraefik) deleteIngressRoutes(ctx context.Context, userID stri
 }
 
 // CreateSandbox creates a new sandbox for a user with Traefik IngressRoutes
-func (c *ClientWithTraefik) CreateSandbox(userID string, envVars map[string]string) error {
+func (c *ClientWithTraefik) CreateSandbox(userID string, envVars map[string]string, nodeEnvVars map[string]string) error {
 	ctx := context.Background()
 
 	// Create namespace if it doesn't exist
@@ -195,8 +195,15 @@ func (c *ClientWithTraefik) CreateSandbox(userID string, envVars map[string]stri
 		return err
 	}
 
+	// Create ConfigMap for Node.js environment variables if provided
+	if len(nodeEnvVars) > 0 {
+		if err := c.createNodeEnvConfigMap(ctx, userID, nodeEnvVars); err != nil {
+			return err
+		}
+	}
+
 	// Create deployment with environment variables
-	if err := c.createDeployment(ctx, userID, envVars); err != nil {
+	if err := c.createDeployment(ctx, userID, envVars, len(nodeEnvVars) > 0); err != nil {
 		return err
 	}
 
@@ -233,6 +240,12 @@ func (c *ClientWithTraefik) DeleteSandbox(userID string) error {
 	if err := c.clientset.AppsV1().Deployments(c.namespace).Delete(ctx,
 		fmt.Sprintf("%s-deployment", userID), metav1.DeleteOptions{}); err != nil {
 		log.Printf("Error deleting deployment: %v", err)
+	}
+
+	// Delete Node.js environment ConfigMap if it exists
+	if err := c.clientset.CoreV1().ConfigMaps(c.namespace).Delete(ctx,
+		fmt.Sprintf("%s-node-env", userID), metav1.DeleteOptions{}); err != nil {
+		log.Printf("Error deleting Node.js env ConfigMap: %v", err)
 	}
 
 	// Keep PVC for now (user data persistence)

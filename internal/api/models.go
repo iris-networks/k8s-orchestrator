@@ -17,6 +17,11 @@ type SandboxRequest struct {
 	// EnvVars contains key-value pairs of environment variables to pass to the container.
 	// Example: {"DEBUG":"true", "API_KEY":"abc123"}
 	EnvVars map[string]string `json:"envVars,omitempty" example:"{\"DEBUG\":\"true\", \"API_KEY\":\"abc123\"}"`
+
+	// NodeEnvVars contains environment variables specifically for the Node.js process.
+	// These will be passed only to the Node.js process running as nodeuser.
+	// Example: {"NODE_ENV":"production", "PORT":"3000"}
+	NodeEnvVars map[string]string `json:"nodeEnvVars,omitempty" example:"{\"NODE_ENV\":\"production\", \"PORT\":\"3000\"}"`
 }
 
 // SandboxResponse is the response for sandbox creation with Traefik integration
