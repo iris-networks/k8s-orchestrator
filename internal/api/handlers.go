@@ -1,7 +1,9 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/shanurcsenitap/irisk8s/internal/k8s"
@@ -256,5 +258,103 @@ func (h *SandboxHandlerWithTraefik) DeleteSandbox(c *gin.Context) {
 	c.JSON(http.StatusOK, Response{
 		Message: "Sandbox deleted successfully",
 		UserID:  userID,
+	})
+}
+
+// GetSandboxStatus gets the status of a sandbox by user ID
+// @Summary      Get the status of a user sandbox
+// @Description  Retrieves the status of a sandbox for a specific user
+// @Tags         sandbox
+// @Accept       json
+// @Produce      json
+// @Param        userId path string true "User ID"
+// @Success      200 {object} SandboxStatusResponse
+// @Failure      400 {object} ErrorResponse
+// @Failure      404 {object} ErrorResponse
+// @Failure      500 {object} ErrorResponse
+// @Router       /v1/sandbox/{userId}/status [get]
+func (h *SandboxHandler) GetSandboxStatus(c *gin.Context) {
+	userID := c.Param("userId")
+	if userID == "" {
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error: "User ID is required",
+		})
+		return
+	}
+
+	ctx := c.Request.Context()
+	sandbox, err := h.k8sClient.GetSandboxStatus(ctx, userID)
+	if err != nil {
+		// Check if the error is "not found"
+		if strings.Contains(err.Error(), "not found") {
+			c.JSON(http.StatusNotFound, ErrorResponse{
+				Error: fmt.Sprintf("No sandbox found for user ID: %s", userID),
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error: err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, SandboxStatusResponse{
+		UserID:    sandbox.UserID,
+		Status:    sandbox.Status,
+		CreatedAt: sandbox.CreatedAt,
+		Exists:    true,
+	})
+}
+
+// GetSandboxStatus gets the status of a sandbox by user ID with Traefik integration
+// @Summary      Get the status of a user sandbox with Traefik routing
+// @Description  Retrieves the status of a sandbox for a specific user with Traefik IngressRoutes
+// @Tags         sandbox
+// @Accept       json
+// @Produce      json
+// @Param        userId path string true "User ID"
+// @Success      200 {object} SandboxStatusResponse
+// @Failure      400 {object} ErrorResponse
+// @Failure      404 {object} ErrorResponse
+// @Failure      500 {object} ErrorResponse
+// @Router       /v1/sandbox/{userId}/status [get]
+func (h *SandboxHandlerWithTraefik) GetSandboxStatus(c *gin.Context) {
+	userID := c.Param("userId")
+	if userID == "" {
+		c.JSON(http.StatusBadRequest, ErrorResponse{
+			Error: "User ID is required",
+		})
+		return
+	}
+
+	ctx := c.Request.Context()
+	sandbox, err := h.k8sClient.GetSandboxStatus(ctx, userID)
+	if err != nil {
+		// Check if the error is "not found"
+		if strings.Contains(err.Error(), "not found") {
+			c.JSON(http.StatusNotFound, ErrorResponse{
+				Error: fmt.Sprintf("No sandbox found for user ID: %s", userID),
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, ErrorResponse{
+			Error: err.Error(),
+		})
+		return
+	}
+
+	// For Traefik integration, include the URLs
+	vncURL := "https://" + userID + "-vnc.tryiris.dev"
+	apiURL := "https://" + userID + "-api.tryiris.dev"
+
+	c.JSON(http.StatusOK, SandboxStatusResponseWithURLs{
+		SandboxStatusResponse: SandboxStatusResponse{
+			UserID:    sandbox.UserID,
+			Status:    sandbox.Status,
+			CreatedAt: sandbox.CreatedAt,
+			Exists:    true,
+		},
+		VncURL: vncURL,
+		ApiURL: apiURL,
 	})
 }

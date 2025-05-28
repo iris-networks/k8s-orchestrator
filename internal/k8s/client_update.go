@@ -254,6 +254,12 @@ func (c *ClientWithTraefik) ListSandboxes(ctx context.Context) ([]SandboxInfo, e
 	return c.Client.ListSandboxes(ctx)
 }
 
+// GetSandboxStatus retrieves the status of a specific sandbox by user ID
+func (c *ClientWithTraefik) GetSandboxStatus(ctx context.Context, userID string) (*SandboxInfo, error) {
+	// Reuse the base client's implementation
+	return c.Client.GetSandboxStatus(ctx, userID)
+}
+
 // Helper function to convert a struct to unstructured.Unstructured
 func convertToUnstructured(obj interface{}) (*unstructured.Unstructured, error) {
 	data, err := json.Marshal(obj)

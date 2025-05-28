@@ -98,6 +98,56 @@
                 }
             }
         },
+        "/v1/sandbox/{userId}/status": {
+            "get": {
+                "description": "Retrieves the status of a sandbox for a specific user with Traefik IngressRoutes",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sandbox"
+                ],
+                "summary": "Get the status of a user sandbox with Traefik routing",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.SandboxStatusResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/sandboxes": {
             "get": {
                 "description": "Retrieves a list of all sandboxes with their status",
@@ -214,6 +264,32 @@
                     "description": "VNC URL for the sandbox",
                     "type": "string",
                     "example": "https://user123-vnc.tryiris.dev"
+                }
+            }
+        },
+        "api.SandboxStatusResponse": {
+            "description": "Response for sandbox status check",
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "description": "Created timestamp",
+                    "type": "string",
+                    "example": "2023-04-20T12:00:00Z"
+                },
+                "exists": {
+                    "description": "Whether the sandbox exists",
+                    "type": "boolean",
+                    "example": true
+                },
+                "status": {
+                    "description": "Sandbox status",
+                    "type": "string",
+                    "example": "Running"
+                },
+                "userId": {
+                    "description": "User ID",
+                    "type": "string",
+                    "example": "user123"
                 }
             }
         },

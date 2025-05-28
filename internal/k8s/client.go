@@ -427,3 +427,36 @@ func (c *Client) ListSandboxes(ctx context.Context) ([]SandboxInfo, error) {
 
 	return sandboxes, nil
 }
+
+// GetSandboxStatus retrieves the status of a specific sandbox by user ID
+func (c *Client) GetSandboxStatus(ctx context.Context, userID string) (*SandboxInfo, error) {
+	if userID == "" {
+		return nil, fmt.Errorf("user ID is required")
+	}
+
+	// Try to get the deployment for this user
+	deploymentName := fmt.Sprintf("%s-deployment", userID)
+	deployment, err := c.clientset.AppsV1().Deployments(c.namespace).Get(ctx, deploymentName, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("sandbox not found for user ID %s: %w", userID, err)
+	}
+
+	// Check deployment status
+	status := "Unknown"
+	if deployment.Status.AvailableReplicas > 0 {
+		status = "Running"
+	} else if deployment.Status.UnavailableReplicas > 0 {
+		status = "Unavailable"
+	} else if deployment.Status.ReadyReplicas == 0 {
+		status = "Pending"
+	}
+
+	// Get creation timestamp
+	createdAt := deployment.CreationTimestamp.Format(metav1.RFC3339Micro)
+
+	return &SandboxInfo{
+		UserID:    userID,
+		Status:    status,
+		CreatedAt: createdAt,
+	}, nil
+}

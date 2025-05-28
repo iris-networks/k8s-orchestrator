@@ -39,6 +39,30 @@ type SandboxListResponse struct {
 	Sandboxes []k8s.SandboxInfo `json:"sandboxes"`
 }
 
+// SandboxStatusResponse is the response for checking a sandbox's status
+// @Description Response for sandbox status check
+type SandboxStatusResponse struct {
+	// User ID
+	UserID string `json:"userId" example:"user123"`
+	// Sandbox status
+	Status string `json:"status" example:"Running"`
+	// Created timestamp
+	CreatedAt string `json:"createdAt" example:"2023-04-20T12:00:00Z"`
+	// Whether the sandbox exists
+	Exists bool `json:"exists" example:"true"`
+}
+
+// SandboxStatusResponseWithURLs is the response for checking a sandbox's status with Traefik integration
+// @Description Response for sandbox status check with URLs
+type SandboxStatusResponseWithURLs struct {
+	// Embed the standard status response
+	SandboxStatusResponse
+	// VNC URL for the sandbox
+	VncURL string `json:"vncUrl" example:"https://user123-vnc.tryiris.dev"`
+	// API URL for the sandbox
+	ApiURL string `json:"apiUrl" example:"https://user123-api.tryiris.dev"`
+}
+
 // ErrorResponse is the standard error response
 // @Description Standard API error response
 type ErrorResponse struct {
