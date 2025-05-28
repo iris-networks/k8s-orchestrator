@@ -19,6 +19,19 @@ import (
 	"k8s.io/client-go/util/homedir"
 )
 
+// Helper function to convert int64 to pointer
+func pointer(i int64) *int64 {
+	return &i
+}
+
+// Constants for user and group IDs
+const (
+	// NodeUserID is the user ID for nodeuser in the container
+	NodeUserID int64 = 1001
+	// NodeGroupID is the group ID for nodeuser in the container
+	NodeGroupID int64 = 1001
+)
+
 // Client is a Kubernetes client wrapper
 type Client struct {
 	clientset *kubernetes.Clientset
@@ -225,6 +238,8 @@ func (c *Client) createNodeEnvConfigMap(ctx context.Context, userID string, node
 
 // createDeployment creates a deployment for the user's sandbox
 func (c *Client) createDeployment(ctx context.Context, userID string, envVars map[string]string, hasNodeEnv bool) error {
+	// Add debug log to confirm security context is being applied
+	log.Printf("Creating deployment with securityContext (fsGroup: %d, runAsUser: %d)", NodeGroupID, NodeUserID)
 	deploymentName := fmt.Sprintf("%s-deployment", userID)
 
 	// Create deployment
@@ -305,6 +320,32 @@ func (c *Client) createDeployment(ctx context.Context, userID string, envVars ma
 					},
 				},
 				Spec: corev1.PodSpec{
+					SecurityContext: &corev1.PodSecurityContext{
+						FSGroup:            pointer(NodeGroupID),
+						RunAsUser:          pointer(NodeUserID),
+						RunAsGroup:         pointer(NodeGroupID),
+						FSGroupChangePolicy: func() *corev1.PodFSGroupChangePolicy {
+							policy := corev1.FSGroupChangeOnRootMismatch
+							return &policy
+						}(),
+					},
+					InitContainers: []corev1.Container{
+						{
+							Name:  "volume-permissions",
+							Image: "busybox:latest",
+							Command: []string{
+								"sh",
+								"-c",
+								fmt.Sprintf("mkdir -p /home/nodeuser/.iris && chown -R %d:%d /home/nodeuser/.iris", NodeUserID, NodeGroupID),
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "user-data",
+									MountPath: "/home/nodeuser/.iris",
+								},
+							},
+						},
+					},
 					Containers: []corev1.Container{
 						{
 							Name:  "sandbox",
