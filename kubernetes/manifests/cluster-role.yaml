@@ -7,7 +7,7 @@ rules:
   resources: ["ingressroutes"]
   verbs: ["create", "get", "list", "watch", "update", "delete"]
 - apiGroups: [""]
-  resources: ["namespaces", "services", "persistentvolumeclaims"]
+  resources: ["namespaces", "services", "persistentvolumeclaims", "configmaps"]
   verbs: ["create", "get", "list", "watch", "update", "delete"]
 - apiGroups: ["apps"]
   resources: ["deployments"]
