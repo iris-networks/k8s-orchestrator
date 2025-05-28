@@ -25,6 +25,8 @@ This service allows for creating and managing isolated user environments (sandbo
 - Go 1.21+
 - `kubectl` configured with appropriate permissions
 
+For information about volume permissions and how they're handled, see the [Volume Permissions Guide](docs/volume-permissions.md).
+
 ## Installation
 
 ### Clone the repository

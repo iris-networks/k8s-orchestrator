@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: fix-permissions-test
+  namespace: user-sandboxes
+spec:
+  securityContext:
+    fsGroup: 1001
+    runAsUser: 1001
+    runAsGroup: 1001
+  containers:
+  - name: test
+    image: busybox:latest
+    command:
+    - sh
+    - -c
+    - |
+      mkdir -p /home/nodeuser/.iris
+      echo "test" > /home/nodeuser/.iris/test.txt
+      ls -la /home/nodeuser/.iris
+      cat /home/nodeuser/.iris/test.txt
+      echo "Test complete"
+      sleep 3600
+    volumeMounts:
+    - name: user-data
+      mountPath: /home/nodeuser/.iris
+  volumes:
+  - name: user-data
+    persistentVolumeClaim:
+      claimName: shanurrhaman-pvc
