@@ -97,7 +97,7 @@ func (c *ClientWithTraefik) createVncIngressRoute(ctx context.Context, userID st
 				},
 			},
 			TLS: &TLS{
-				CertResolver: "cloudflare",
+				CertResolver: "letsencrypt",
 			},
 		},
 	}
@@ -145,7 +145,7 @@ func (c *ClientWithTraefik) createApiIngressRoute(ctx context.Context, userID st
 				},
 			},
 			TLS: &TLS{
-				CertResolver: "cloudflare",
+				CertResolver: "letsencrypt",
 			},
 		},
 	}
