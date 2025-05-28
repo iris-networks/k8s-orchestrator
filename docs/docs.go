@@ -249,6 +249,17 @@ const docTemplate = `{
                         " \"API_KEY\"": "\"abc123\"}",
                         "{\"DEBUG\"": "\"true\""
                     }
+                },
+                "nodeEnvVars": {
+                    "description": "NodeEnvVars contains environment variables specifically for the Node.js process.\nThese will be passed only to the Node.js process running as nodeuser.\nExample: {\"NODE_ENV\":\"production\", \"PORT\":\"3000\"}",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "example": {
+                        " \"PORT\"": "\"3000\"}",
+                        "{\"NODE_ENV\"": "\"production\""
+                    }
                 }
             }
         },
