@@ -12,7 +12,7 @@ import (
 // createPVC creates a persistent volume claim for the user
 func (c *Client) createPVC(ctx context.Context, userID string) error {
 	pvcName := fmt.Sprintf("%s-pvc", userID)
-	
+
 	// Check if PVC already exists
 	_, err := c.clientset.CoreV1().PersistentVolumeClaims(c.namespace).Get(ctx, pvcName, metav1.GetOptions{})
 	if err == nil {
@@ -41,6 +41,55 @@ func (c *Client) createPVC(ctx context.Context, userID string) error {
 
 	_, err = c.clientset.CoreV1().PersistentVolumeClaims(c.namespace).Create(ctx, pvc, metav1.CreateOptions{})
 	return err
+}
+
+// getUserDataVolume returns a volume for user data linked to the user's PVC
+func (c *Client) getUserDataVolume(userID string) corev1.Volume {
+	return corev1.Volume{
+		Name: "user-data",
+		VolumeSource: corev1.VolumeSource{
+			PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+				ClaimName: fmt.Sprintf("%s-pvc", userID),
+			},
+		},
+	}
+}
+
+// getUserDataVolumeMounts returns volume mounts for the user data volume
+func (c *Client) getUserDataVolumeMounts() []corev1.VolumeMount {
+	return []corev1.VolumeMount{
+		{
+			Name:      "user-data",
+			MountPath: "/home/nodeuser/.iris",
+		},
+		{
+			Name:      "user-data",
+			MountPath: "/home/headless/.mozilla/firefox",
+		},
+	}
+}
+
+// getNodeEnvVolume returns a volume for Node.js environment variables
+func (c *Client) getNodeEnvVolume(userID string) corev1.Volume {
+	return corev1.Volume{
+		Name: "node-env",
+		VolumeSource: corev1.VolumeSource{
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: fmt.Sprintf("%s-node-env", userID),
+				},
+			},
+		},
+	}
+}
+
+// getNodeEnvVolumeMount returns a volume mount for Node.js environment variables
+func (c *Client) getNodeEnvVolumeMount() corev1.VolumeMount {
+	return corev1.VolumeMount{
+		Name:      "node-env",
+		MountPath: "/app/.env",
+		SubPath:   "node.env",
+	}
 }
 
 // createNodeEnvConfigMap creates a ConfigMap for Node.js specific environment variables

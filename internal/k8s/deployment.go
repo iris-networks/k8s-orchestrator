@@ -8,6 +8,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // createDeployment creates a deployment for the user's sandbox
@@ -32,44 +33,18 @@ func (c *Client) createDeployment(ctx context.Context, userID string, envVars ma
 		Value: userID,
 	})
 
-	// Create volume mounts for the container
-	volumeMounts := []corev1.VolumeMount{
-		{
-			Name:      "user-data",
-			MountPath: "/home/nodeuser/.iris",
-		},
-	}
+	// Get volume mounts for the container from storage
+	volumeMounts := c.getUserDataVolumeMounts()
 
-	// Create volumes for the pod
+	// Get volumes for the pod from storage
 	volumes := []corev1.Volume{
-		{
-			Name: "user-data",
-			VolumeSource: corev1.VolumeSource{
-				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-					ClaimName: fmt.Sprintf("%s-pvc", userID),
-				},
-			},
-		},
+		c.getUserDataVolume(userID),
 	}
 
 	// Add Node.js environment variables ConfigMap if needed
 	if hasNodeEnv {
-		volumeMounts = append(volumeMounts, corev1.VolumeMount{
-			Name:      "node-env",
-			MountPath: "/app/.env",
-			SubPath:   "node.env",
-		})
-
-		volumes = append(volumes, corev1.Volume{
-			Name: "node-env",
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: fmt.Sprintf("%s-node-env", userID),
-					},
-				},
-			},
-		})
+		volumeMounts = append(volumeMounts, c.getNodeEnvVolumeMount())
+		volumes = append(volumes, c.getNodeEnvVolume(userID))
 	}
 
 	deployment := &appsv1.Deployment{
@@ -100,14 +75,9 @@ func (c *Client) createDeployment(ctx context.Context, userID string, envVars ma
 							Command: []string{
 								"sh",
 								"-c",
-								"mkdir -p /home/nodeuser/.iris && chmod -R 777 /home/nodeuser/.iris",
+								"mkdir -p /home/nodeuser/.iris && chmod -R 777 /home/nodeuser/.iris && mkdir -p /home/headless/.mozilla/firefox && chmod -R 777 /home/headless/.mozilla/firefox",
 							},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "user-data",
-									MountPath: "/home/nodeuser/.iris",
-								},
-							},
+							VolumeMounts: c.getUserDataVolumeMounts(),
 							SecurityContext: &corev1.SecurityContext{
 								RunAsUser: func() *int64 { 
 									var uid int64 = 0 // Run as root to set permissions
@@ -135,12 +105,38 @@ func (c *Client) createDeployment(ctx context.Context, userID string, envVars ma
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
 									corev1.ResourceCPU:    resource.MustParse("1"),
-									corev1.ResourceMemory: resource.MustParse("2Gi"),
+									corev1.ResourceMemory: resource.MustParse("4Gi"),
 								},
 								Requests: corev1.ResourceList{
 									corev1.ResourceCPU:    resource.MustParse("500m"),
-									corev1.ResourceMemory: resource.MustParse("1Gi"),
+									corev1.ResourceMemory: resource.MustParse("2Gi"),
 								},
+							},
+							LivenessProbe: &corev1.Probe{
+								ProbeHandler: corev1.ProbeHandler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path: "/api/health",
+										Port: intstr.FromInt(3000),
+									},
+								},
+								InitialDelaySeconds: 5,
+								TimeoutSeconds:      5,
+								PeriodSeconds:       15,
+								SuccessThreshold:    1,
+								FailureThreshold:    3,
+							},
+							ReadinessProbe: &corev1.Probe{
+								ProbeHandler: corev1.ProbeHandler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path: "/api/health",
+										Port: intstr.FromInt(3000),
+									},
+								},
+								InitialDelaySeconds: 3,
+								TimeoutSeconds:      3,
+								PeriodSeconds:       10,
+								SuccessThreshold:    1,
+								FailureThreshold:    3,
 							},
 						},
 					},
