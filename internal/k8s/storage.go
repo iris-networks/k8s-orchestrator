@@ -66,6 +66,10 @@ func (c *Client) getUserDataVolumeMounts() []corev1.VolumeMount {
 			Name:      "user-data",
 			MountPath: "/home/headless/.mozilla/firefox",
 		},
+		{
+			Name:      "user-data",
+			MountPath: "/home/vncuser/.config",
+		},
 	}
 }
 

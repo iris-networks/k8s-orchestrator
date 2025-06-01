@@ -75,7 +75,7 @@ func (c *Client) createDeployment(ctx context.Context, userID string, envVars ma
 							Command: []string{
 								"sh",
 								"-c",
-								"mkdir -p /home/nodeuser/.iris && chmod -R 777 /home/nodeuser/.iris && mkdir -p /home/headless/.mozilla/firefox && chmod -R 777 /home/headless/.mozilla/firefox",
+								"mkdir -p /home/nodeuser/.iris && chmod -R 777 /home/nodeuser/.iris && mkdir -p /home/headless/.mozilla/firefox && chmod -R 777 /home/headless/.mozilla/firefox && mkdir -p /home/vncuser/.config && chmod -R 777 /home/vncuser/.config",
 							},
 							VolumeMounts: c.getUserDataVolumeMounts(),
 							SecurityContext: &corev1.SecurityContext{
