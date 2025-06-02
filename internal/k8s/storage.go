@@ -70,6 +70,11 @@ func (c *Client) getUserDataVolumeMounts() []corev1.VolumeMount {
 			Name:      "user-data",
 			MountPath: "/home/vncuser/.config",
 		},
+		{
+			Name:      "user-data",
+			MountPath: "/home/vncuser/.config/google-chrome",
+			SubPath:   "chrome-data",
+		},
 	}
 }
 
