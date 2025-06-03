@@ -25,6 +25,9 @@ func main() {
 		log.Fatalf("Failed to create Kubernetes client: %v", err)
 	}
 
+	// Start the auto cleanup service to delete sandboxes after 15 minutes
+	k8sClient.StartAutoCleanupService(context.Background())
+
 	// Initialize router
 	router := gin.Default()
 
