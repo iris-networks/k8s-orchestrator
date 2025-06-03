@@ -75,7 +75,7 @@ func (c *Client) createDeployment(ctx context.Context, userID string, envVars ma
 							Command: []string{
 								"sh",
 								"-c",
-								"mkdir -p /home/nodeuser/.iris && chmod -R 777 /home/nodeuser/.iris && mkdir -p /home/headless/.mozilla/firefox && chmod -R 777 /home/headless/.mozilla/firefox && mkdir -p /home/vncuser/.config && chmod -R 777 /home/vncuser/.config",
+								"mkdir -p /home/nodeuser/.iris && chmod -R 777 /home/nodeuser/.iris && mkdir -p /home/headless/.mozilla/firefox && chmod -R 777 /home/headless/.mozilla/firefox && mkdir -p /home/vncuser/.config && chmod -R 777 /home/vncuser/.config && rm -f /home/vncuser/.config/google-chrome/Singleton*",
 							},
 							VolumeMounts: c.getUserDataVolumeMounts(),
 							SecurityContext: &corev1.SecurityContext{
@@ -90,6 +90,7 @@ func (c *Client) createDeployment(ctx context.Context, userID string, envVars ma
 						{
 							Name:  "sandbox",
 							Image: "shanurcsenitap/iris_agent:latest",
+							ImagePullPolicy: corev1.PullIfNotPresent,
 							Ports: []corev1.ContainerPort{
 								{
 									ContainerPort: 6901,
@@ -132,11 +133,11 @@ func (c *Client) createDeployment(ctx context.Context, userID string, envVars ma
 										Port: intstr.FromInt(3000),
 									},
 								},
-								InitialDelaySeconds: 3,
-								TimeoutSeconds:      3,
-								PeriodSeconds:       10,
+								InitialDelaySeconds: 1,
+								TimeoutSeconds:      1,
+								PeriodSeconds:       3,
 								SuccessThreshold:    1,
-								FailureThreshold:    3,
+								FailureThreshold:    2,
 							},
 						},
 					},
