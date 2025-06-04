@@ -78,9 +78,9 @@ func (c *Client) DeleteSandbox(userID string) error {
 		log.Printf("Error deleting deployment: %v", err)
 	}
 
-	// Delete Node.js environment ConfigMap if it exists
+	// Delete Node.js environment ConfigMap using the correct name format
 	if err := c.clientset.CoreV1().ConfigMaps(c.namespace).Delete(ctx,
-		fmt.Sprintf("%s-node-env", userID), metav1.DeleteOptions{}); err != nil {
+		fmt.Sprintf("iris-%s-node-env", userID), metav1.DeleteOptions{}); err != nil {
 		log.Printf("Error deleting Node.js env ConfigMap: %v", err)
 	}
 

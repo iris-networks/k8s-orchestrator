@@ -1,4 +1,16 @@
 definitions:
+  api.CleanupResponse:
+    description: Cleanup operation response
+    properties:
+      duration:
+        description: Duration used for cleanup
+        example: 15 minutes
+        type: string
+      message:
+        description: Response message
+        example: Cleanup triggered successfully
+        type: string
+    type: object
   api.ErrorResponse:
     description: Standard API error response
     properties:
@@ -112,6 +124,45 @@ definitions:
 info:
   contact: {}
 paths:
+  /v1/admin/cleanup:
+    post:
+      consumes:
+      - application/json
+      description: Deletes all sandboxes that have been running for more than the
+        specified minutes
+      parameters:
+      - description: Age in minutes
+        in: query
+        name: minutes
+        required: true
+        type: integer
+      - description: Authentication token
+        in: query
+        name: auth
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.CleanupResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.ErrorResponse'
+      summary: Trigger cleanup of old sandboxes with Traefik routing
+      tags:
+      - admin
   /v1/sandbox/{userId}:
     delete:
       consumes:

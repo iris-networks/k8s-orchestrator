@@ -230,21 +230,38 @@ func (c *ClientWithTraefik) DeleteSandbox(userID string) error {
 		log.Printf("Error deleting IngressRoutes: %v", err)
 	}
 
-	// Delete service
+	// Try to delete service
 	if err := c.clientset.CoreV1().Services(c.namespace).Delete(ctx,
 		fmt.Sprintf("%s-service", userID), metav1.DeleteOptions{}); err != nil {
 		log.Printf("Error deleting service: %v", err)
 	}
 
-	// Delete deployment
-	if err := c.clientset.AppsV1().Deployments(c.namespace).Delete(ctx,
-		fmt.Sprintf("%s-deployment", userID), metav1.DeleteOptions{}); err != nil {
-		log.Printf("Error deleting deployment: %v", err)
+	// Try possible deployment name patterns
+	deploymentPatterns := []string{
+		fmt.Sprintf("%s-deployment", userID),
+		fmt.Sprintf("iris-%s-deployment", userID),
 	}
 
-	// Delete Node.js environment ConfigMap if it exists
+	deploymentDeleted := false
+	for _, depName := range deploymentPatterns {
+		log.Printf("Trying to delete deployment: %s", depName)
+		err := c.clientset.AppsV1().Deployments(c.namespace).Delete(ctx, depName, metav1.DeleteOptions{})
+		if err == nil {
+			log.Printf("Successfully deleted deployment: %s", depName)
+			deploymentDeleted = true
+			break
+		} else {
+			log.Printf("Failed to delete deployment %s: %v", depName, err)
+		}
+	}
+
+	if !deploymentDeleted {
+		log.Printf("Warning: Could not delete any deployment for userID: %s", userID)
+	}
+
+	// Delete Node.js environment ConfigMap using the correct name format
 	if err := c.clientset.CoreV1().ConfigMaps(c.namespace).Delete(ctx,
-		fmt.Sprintf("%s-node-env", userID), metav1.DeleteOptions{}); err != nil {
+		fmt.Sprintf("iris-%s-node-env", userID), metav1.DeleteOptions{}); err != nil {
 		log.Printf("Error deleting Node.js env ConfigMap: %v", err)
 	}
 
@@ -257,7 +274,7 @@ func (c *ClientWithTraefik) DeleteSandbox(userID string) error {
 	}
 	*/
 
-	log.Printf("Sandbox deleted for user: %s", userID)
+	log.Printf("Sandbox deletion process completed for user: %s", userID)
 	return nil
 }
 
