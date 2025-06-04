@@ -12,8 +12,8 @@ import (
 
 // createService creates a service for the user's sandbox
 func (c *Client) createService(ctx context.Context, userID string) error {
-	serviceName := fmt.Sprintf("%s-service", userID)
-	
+	serviceName := fmt.Sprintf("iris-%s-service", userID)
+
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: serviceName,

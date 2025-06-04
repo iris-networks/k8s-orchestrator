@@ -13,7 +13,7 @@ import (
 
 // createDeployment creates a deployment for the user's sandbox
 func (c *Client) createDeployment(ctx context.Context, userID string, envVars map[string]string, hasNodeEnv bool) error {
-	deploymentName := fmt.Sprintf("%s-deployment", userID)
+	deploymentName := fmt.Sprintf("iris-%s-deployment", userID)
 
 	// Create deployment
 	var replicas int32 = 1

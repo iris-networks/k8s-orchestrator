@@ -25,8 +25,28 @@ func main() {
 		log.Fatalf("Failed to create Kubernetes client: %v", err)
 	}
 
-	// Start the auto cleanup service to delete sandboxes after 15 minutes
-	k8sClient.StartAutoCleanupService(context.Background())
+	// Set up background job to run CleanupExpiredSandboxesByDuration every minute
+	go func() {
+		ticker := time.NewTicker(1 * time.Minute)
+		defer ticker.Stop()
+
+		ctx := context.Background()
+		log.Println("Auto cleanup background job started - sandboxes will be deleted after 15 minutes")
+
+		// Run immediately on startup
+		if err := k8sClient.CleanupExpiredSandboxesByDuration(ctx, k8s.ResourceExpirationTime, k8s.DefaultAuthToken); err != nil {
+			log.Printf("Error in initial cleanup: %v", err)
+		}
+
+		for {
+			select {
+			case <-ticker.C:
+				if err := k8sClient.CleanupExpiredSandboxesByDuration(ctx, k8s.ResourceExpirationTime, k8s.DefaultAuthToken); err != nil {
+					log.Printf("Error in scheduled cleanup: %v", err)
+				}
+			}
+		}
+	}()
 
 	// Initialize router
 	router := gin.Default()

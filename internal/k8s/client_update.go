@@ -77,7 +77,7 @@ func (c *ClientWithTraefik) createVncIngressRoute(ctx context.Context, userID st
 			Kind:       "IngressRoute",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-vnc", userID),
+			Name:      fmt.Sprintf("iris-%s-vnc", userID),
 			Namespace: c.namespace,
 			// External-DNS annotations have been removed
 			Annotations: map[string]string{},
@@ -90,7 +90,7 @@ func (c *ClientWithTraefik) createVncIngressRoute(ctx context.Context, userID st
 					Kind:  "Rule",
 					Services: []Service{
 						{
-							Name: fmt.Sprintf("%s-service", userID),
+							Name: fmt.Sprintf("iris-%s-service", userID),
 							Port: 6901,
 						},
 					},
@@ -125,7 +125,7 @@ func (c *ClientWithTraefik) createApiIngressRoute(ctx context.Context, userID st
 			Kind:       "IngressRoute",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-api", userID),
+			Name:      fmt.Sprintf("iris-%s-api", userID),
 			Namespace: c.namespace,
 			// External-DNS annotations have been removed
 			Annotations: map[string]string{},
@@ -138,7 +138,7 @@ func (c *ClientWithTraefik) createApiIngressRoute(ctx context.Context, userID st
 					Kind:  "Rule",
 					Services: []Service{
 						{
-							Name: fmt.Sprintf("%s-service", userID),
+							Name: fmt.Sprintf("iris-%s-service", userID),
 							Port: 3000,
 						},
 					},
@@ -161,25 +161,6 @@ func (c *ClientWithTraefik) createApiIngressRoute(ctx context.Context, userID st
 	return err
 }
 
-// deleteIngressRoutes deletes the IngressRoutes for a user
-func (c *ClientWithTraefik) deleteIngressRoutes(ctx context.Context, userID string) error {
-	// Get the IngressRoute GVR
-	gvr := IngressRouteGVR()
-
-	// Delete the VNC IngressRoute
-	err := c.dynamicClient.Resource(gvr).Namespace(c.namespace).Delete(ctx, fmt.Sprintf("%s-vnc", userID), metav1.DeleteOptions{})
-	if err != nil {
-		log.Printf("Error deleting VNC IngressRoute: %v", err)
-	}
-
-	// Delete the API IngressRoute
-	err = c.dynamicClient.Resource(gvr).Namespace(c.namespace).Delete(ctx, fmt.Sprintf("%s-api", userID), metav1.DeleteOptions{})
-	if err != nil {
-		log.Printf("Error deleting API IngressRoute: %v", err)
-	}
-
-	return nil
-}
 
 // CreateSandbox creates a new sandbox for a user with Traefik IngressRoutes
 func (c *ClientWithTraefik) CreateSandbox(userID string, envVars map[string]string, nodeEnvVars map[string]string) error {
@@ -225,41 +206,33 @@ func (c *ClientWithTraefik) CreateSandbox(userID string, envVars map[string]stri
 func (c *ClientWithTraefik) DeleteSandbox(userID string) error {
 	ctx := context.Background()
 
-	// Delete Traefik IngressRoutes
-	if err := c.deleteIngressRoutes(ctx, userID); err != nil {
-		log.Printf("Error deleting IngressRoutes: %v", err)
+	// Delete VNC IngressRoute
+	if err := c.dynamicClient.Resource(IngressRouteGVR()).Namespace(c.namespace).Delete(ctx,
+		fmt.Sprintf("iris-%s-vnc", userID), metav1.DeleteOptions{}); err != nil {
+		log.Printf("Error deleting VNC IngressRoute: %v", err)
 	}
 
-	// Try to delete service
+	// Delete API IngressRoute
+	if err := c.dynamicClient.Resource(IngressRouteGVR()).Namespace(c.namespace).Delete(ctx,
+		fmt.Sprintf("iris-%s-api", userID), metav1.DeleteOptions{}); err != nil {
+		log.Printf("Error deleting API IngressRoute: %v", err)
+	}
+
+	// Delete service
 	if err := c.clientset.CoreV1().Services(c.namespace).Delete(ctx,
-		fmt.Sprintf("%s-service", userID), metav1.DeleteOptions{}); err != nil {
+		fmt.Sprintf("iris-%s-service", userID), metav1.DeleteOptions{}); err != nil {
 		log.Printf("Error deleting service: %v", err)
 	}
 
-	// Try possible deployment name patterns
-	deploymentPatterns := []string{
-		fmt.Sprintf("%s-deployment", userID),
-		fmt.Sprintf("iris-%s-deployment", userID),
+	// Delete deployment
+	deploymentName := fmt.Sprintf("iris-%s-deployment", userID)
+	if err := c.clientset.AppsV1().Deployments(c.namespace).Delete(ctx, deploymentName, metav1.DeleteOptions{}); err != nil {
+		log.Printf("Error deleting deployment: %v", err)
+	} else {
+		log.Printf("Successfully deleted deployment: %s", deploymentName)
 	}
 
-	deploymentDeleted := false
-	for _, depName := range deploymentPatterns {
-		log.Printf("Trying to delete deployment: %s", depName)
-		err := c.clientset.AppsV1().Deployments(c.namespace).Delete(ctx, depName, metav1.DeleteOptions{})
-		if err == nil {
-			log.Printf("Successfully deleted deployment: %s", depName)
-			deploymentDeleted = true
-			break
-		} else {
-			log.Printf("Failed to delete deployment %s: %v", depName, err)
-		}
-	}
-
-	if !deploymentDeleted {
-		log.Printf("Warning: Could not delete any deployment for userID: %s", userID)
-	}
-
-	// Delete Node.js environment ConfigMap using the correct name format
+	// Delete Node.js environment ConfigMap
 	if err := c.clientset.CoreV1().ConfigMaps(c.namespace).Delete(ctx,
 		fmt.Sprintf("iris-%s-node-env", userID), metav1.DeleteOptions{}); err != nil {
 		log.Printf("Error deleting Node.js env ConfigMap: %v", err)
