@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	_ "github.com/shanurcsenitap/irisk8s/docs"
 	"github.com/shanurcsenitap/irisk8s/internal/api"
+	"github.com/shanurcsenitap/irisk8s/internal/config"
 	"github.com/shanurcsenitap/irisk8s/internal/k8s"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -31,17 +32,17 @@ func main() {
 		defer ticker.Stop()
 
 		ctx := context.Background()
-		log.Println("Auto cleanup background job started - sandboxes will be deleted after 15 minutes")
+		log.Printf("Auto cleanup background job started - sandboxes will be deleted after %v", config.Config.Cleanup.ExpirationTime)
 
 		// Run immediately on startup
-		if err := k8sClient.CleanupExpiredSandboxesByDuration(ctx, k8s.ResourceExpirationTime, k8s.DefaultAuthToken); err != nil {
+		if err := k8sClient.CleanupExpiredSandboxesByDuration(ctx, k8s.GetResourceExpirationTime(), k8s.GetDefaultAuthToken()); err != nil {
 			log.Printf("Error in initial cleanup: %v", err)
 		}
 
 		for {
 			select {
 			case <-ticker.C:
-				if err := k8sClient.CleanupExpiredSandboxesByDuration(ctx, k8s.ResourceExpirationTime, k8s.DefaultAuthToken); err != nil {
+				if err := k8sClient.CleanupExpiredSandboxesByDuration(ctx, k8s.GetResourceExpirationTime(), k8s.GetDefaultAuthToken()); err != nil {
 					log.Printf("Error in scheduled cleanup: %v", err)
 				}
 			}

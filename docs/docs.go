@@ -254,7 +254,7 @@ const docTemplate = `{
                 "duration": {
                     "description": "Duration used for cleanup",
                     "type": "string",
-                    "example": "15 minutes"
+                    "example": "30 minutes"
                 },
                 "message": {
                     "description": "Response message",

@@ -7,21 +7,25 @@ import (
 	"strings"
 	"time"
 
+	"github.com/shanurcsenitap/irisk8s/internal/config"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	// ResourceExpirationTime is the duration after which a sandbox will be automatically deleted
-	ResourceExpirationTime = 15 * time.Minute
-	// DefaultAuthToken is the auth token for external cleanup trigger
-	DefaultAuthToken = "k8s-auto-cleanup-token"
-)
+// GetResourceExpirationTime returns the configured sandbox expiration time
+func GetResourceExpirationTime() time.Duration {
+	return config.Config.Cleanup.ExpirationTime
+}
+
+// GetDefaultAuthToken returns the configured auth token for cleanup
+func GetDefaultAuthToken() string {
+	return config.Config.Cleanup.AuthToken
+}
 
 // CleanupExpiredSandboxesByDuration performs cleanup of sandboxes older than the specified duration
 // This function can be triggered via API and requires authentication
 func (c *ClientWithTraefik) CleanupExpiredSandboxesByDuration(ctx context.Context, duration time.Duration, authToken string) error {
 	// Validate the auth token
-	if authToken != DefaultAuthToken {
+	if authToken != GetDefaultAuthToken() {
 		return errors.New("unauthorized: invalid auth token")
 	}
 

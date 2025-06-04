@@ -4,7 +4,7 @@ definitions:
     properties:
       duration:
         description: Duration used for cleanup
-        example: 15 minutes
+        example: 30 minutes
         type: string
       message:
         description: Response message
