@@ -17,7 +17,8 @@ type SandboxInfo struct {
 }
 
 // CreateSandbox creates a new sandbox for a user
-func (c *Client) CreateSandbox(userID string, envVars map[string]string, nodeEnvVars map[string]string) error {
+func (c *Client) CreateSandbox(userID string) error {
+	// Previous parameters for environment variables have been removed
 	ctx := context.Background()
 
 	// Create namespace if it doesn't exist
@@ -30,15 +31,8 @@ func (c *Client) CreateSandbox(userID string, envVars map[string]string, nodeEnv
 		return err
 	}
 
-	// Create ConfigMap for Node.js environment variables if provided
-	if len(nodeEnvVars) > 0 {
-		if err := c.createNodeEnvConfigMap(ctx, userID, nodeEnvVars); err != nil {
-			return err
-		}
-	}
-
-	// Create deployment with environment variables
-	if err := c.createDeployment(ctx, userID, envVars, len(nodeEnvVars) > 0); err != nil {
+	// Create deployment
+	if err := c.createDeployment(ctx, userID); err != nil {
 		return err
 	}
 
@@ -78,11 +72,7 @@ func (c *Client) DeleteSandbox(userID string) error {
 		log.Printf("Error deleting deployment: %v", err)
 	}
 
-	// Delete Node.js environment ConfigMap using the correct name format
-	if err := c.clientset.CoreV1().ConfigMaps(c.namespace).Delete(ctx,
-		fmt.Sprintf("%s-node-env", userID), metav1.DeleteOptions{}); err != nil {
-		log.Printf("Error deleting Node.js env ConfigMap: %v", err)
-	}
+	// No longer deleting Node.js environment ConfigMap as it's no longer created
 
 	// Keep PVC for now (user data persistence)
 	// Uncomment to delete PVC as well

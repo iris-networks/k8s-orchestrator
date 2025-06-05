@@ -45,30 +45,10 @@ definitions:
         type: array
     type: object
   api.SandboxRequest:
-    description: Request to create a new sandbox with optional environment variables.
-    properties:
-      envVars:
-        additionalProperties:
-          type: string
-        description: |-
-          EnvVars contains key-value pairs of environment variables to pass to the container.
-          Example: {"DEBUG":"true", "API_KEY":"abc123"}
-        example:
-          ' "API_KEY"': '"abc123"}'
-          '{"DEBUG"': '"true"'
-        type: object
-      nodeEnvVars:
-        additionalProperties:
-          type: string
-        description: |-
-          NodeEnvVars contains environment variables specifically for the Node.js process.
-          These will be passed only to the Node.js process running as nodeuser.
-          Example: {"NODE_ENV":"production", "PORT":"3000"}
-        example:
-          ' "PORT"': '"3000"}'
-          '{"NODE_ENV"': '"production"'
-        type: object
+    description: Request to create a new sandbox.
     type: object
+    # This struct is now empty as we've removed environment variable passing.
+    # Kept for API compatibility.
   api.SandboxResponse:
     description: Sandbox creation response with URLs
     properties:
@@ -204,7 +184,7 @@ paths:
         name: userId
         required: true
         type: string
-      - description: Environment variables to pass to the container
+      - description: Sandbox creation request
         in: body
         name: request
         schema:

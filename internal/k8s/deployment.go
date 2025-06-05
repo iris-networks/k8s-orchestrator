@@ -12,22 +12,14 @@ import (
 )
 
 // createDeployment creates a deployment for the user's sandbox
-func (c *Client) createDeployment(ctx context.Context, userID string, envVars map[string]string, hasNodeEnv bool) error {
+func (c *Client) createDeployment(ctx context.Context, userID string) error {
 	deploymentName := fmt.Sprintf("%s-deployment", userID)
 
 	// Create deployment
 	var replicas int32 = 1
 
-	// Convert map of environment variables to Kubernetes EnvVar slice
+	// Only include the USER_ID environment variable
 	var envVarSlice []corev1.EnvVar
-	for key, value := range envVars {
-		envVarSlice = append(envVarSlice, corev1.EnvVar{
-			Name:  key,
-			Value: value,
-		})
-	}
-
-	// Always include the USER_ID environment variable
 	envVarSlice = append(envVarSlice, corev1.EnvVar{
 		Name:  "USER_ID",
 		Value: userID,
@@ -39,12 +31,6 @@ func (c *Client) createDeployment(ctx context.Context, userID string, envVars ma
 	// Get volumes for the pod from storage
 	volumes := []corev1.Volume{
 		c.getUserDataVolume(userID),
-	}
-
-	// Add Node.js environment variables ConfigMap if needed
-	if hasNodeEnv {
-		volumeMounts = append(volumeMounts, c.getNodeEnvVolumeMount())
-		volumes = append(volumes, c.getNodeEnvVolume(userID))
 	}
 
 	deployment := &appsv1.Deployment{
@@ -93,8 +79,8 @@ func (c *Client) createDeployment(ctx context.Context, userID string, envVars ma
 					Containers: []corev1.Container{
 						{
 							Name:  "sandbox",
-							Image: "shanurcsenitap/iris_agent:latest",
-							ImagePullPolicy: corev1.PullIfNotPresent,
+							Image: "gcr.io/driven-seer-460401-p9/iris_agent:latest",
+							ImagePullPolicy: corev1.PullAlways,
 							Ports: []corev1.ContainerPort{
 								{
 									ContainerPort: 6901,

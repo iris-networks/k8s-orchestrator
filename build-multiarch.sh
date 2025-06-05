@@ -2,7 +2,8 @@
 set -e
 
 # Configuration
-IMAGE_NAME="shanurcsenitap/irisk8s"  # Docker Hub username/repo
+PROJECT_ID="driven-seer-460401-p9"  # Google Cloud Project ID
+IMAGE_NAME="gcr.io/${PROJECT_ID}/irisk8s"  # GCR image path
 VERSION="amd64"                  # Specific version tag
 PLATFORMS="linux/amd64"          # Only build for amd64
 
@@ -11,6 +12,10 @@ if ! docker buildx version > /dev/null 2>&1; then
   echo "Error: Docker buildx is not available"
   exit 1
 fi
+
+# Authenticate with GCR
+echo "Authenticating with Google Container Registry..."
+gcloud auth configure-docker gcr.io
 
 # Use builder or create one if it doesn't exist
 if ! docker buildx use amd64-builder > /dev/null 2>&1; then
@@ -27,5 +32,5 @@ docker buildx build \
   --push \
   .
 
-echo "Linux AMD64 image built and pushed successfully!"
+echo "Linux AMD64 image built and pushed successfully to Google Container Registry!"
 echo "Image: ${IMAGE_NAME}:${VERSION} and ${IMAGE_NAME}:latest"
