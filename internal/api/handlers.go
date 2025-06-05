@@ -11,7 +11,6 @@ import (
 	"github.com/shanurcsenitap/irisk8s/internal/k8s"
 )
 
-
 // SandboxHandler manages sandbox operations with Traefik integration
 type SandboxHandler struct {
 	k8sClient *k8s.ClientWithTraefik
@@ -92,6 +91,14 @@ func (h *SandboxHandler) CreateSandbox(c *gin.Context) {
 
 	err := h.k8sClient.CreateSandbox(userID, request.EnvVars, request.NodeEnvVars)
 	if err != nil {
+		// Check if error is related to service name validation
+		if strings.Contains(err.Error(), "invalid user ID for Kubernetes service") {
+			c.JSON(http.StatusBadRequest, ErrorResponse{
+				Error: err.Error(),
+			})
+			return
+		}
+		// All other errors
 		c.JSON(http.StatusInternalServerError, ErrorResponse{
 			Error: err.Error(),
 		})
