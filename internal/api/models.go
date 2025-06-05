@@ -75,5 +75,5 @@ type CleanupResponse struct {
 	// Response message
 	Message string `json:"message" example:"Cleanup triggered successfully"`
 	// Duration used for cleanup
-	Duration string `json:"duration" example:"15 minutes"`
+	Duration string `json:"duration" example:"configurable timeout"`
 }
