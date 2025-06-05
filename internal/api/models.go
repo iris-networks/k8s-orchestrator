@@ -74,3 +74,12 @@ type ErrorResponse struct {
 	// Error message
 	Error string `json:"error" example:"User ID is required"`
 }
+
+// CleanupResponse is the response for cleanup operation
+// @Description Cleanup operation response
+type CleanupResponse struct {
+	// Response message
+	Message string `json:"message" example:"Cleanup triggered successfully"`
+	// Duration used for cleanup
+	Duration string `json:"duration" example:"15 minutes"`
+}

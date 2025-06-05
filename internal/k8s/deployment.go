@@ -50,6 +50,10 @@ func (c *Client) createDeployment(ctx context.Context, userID string, envVars ma
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: deploymentName,
+			Labels: map[string]string{
+				"app":  "user-sandbox",
+				"user": userID,
+			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,

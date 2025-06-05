@@ -77,8 +77,16 @@ Swagger documentation will be available at http://localhost:8080/swagger/index.h
 
 ## API Endpoints
 
+### Sandbox Management
 - `POST /v1/sandbox/{userId}` - Create user sandbox
 - `DELETE /v1/sandbox/{userId}` - Delete user sandbox
+- `GET /v1/sandbox/{userId}/status` - Get sandbox status
+- `GET /v1/sandboxes` - List all sandboxes
+
+### Administration
+- `POST /v1/admin/cleanup?minutes={minutes}&auth={authToken}` - Cleanup sandboxes older than specified minutes
+  - `minutes`: Age threshold in minutes
+  - `auth`: Authentication token (required)
 
 ## Deployment
 

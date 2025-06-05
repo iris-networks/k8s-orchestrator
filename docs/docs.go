@@ -15,6 +15,63 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/v1/admin/cleanup": {
+            "post": {
+                "description": "Deletes all sandboxes that have been running for more than the specified minutes",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Trigger cleanup of old sandboxes with Traefik routing",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Age in minutes",
+                        "name": "minutes",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Authentication token",
+                        "name": "auth",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.CleanupResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/sandbox/{userId}": {
             "post": {
                 "description": "Creates a new containerized sandbox for a specific user with Traefik IngressRoutes",
@@ -190,6 +247,22 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "api.CleanupResponse": {
+            "description": "Cleanup operation response",
+            "type": "object",
+            "properties": {
+                "duration": {
+                    "description": "Duration used for cleanup",
+                    "type": "string",
+                    "example": "15 minutes"
+                },
+                "message": {
+                    "description": "Response message",
+                    "type": "string",
+                    "example": "Cleanup triggered successfully"
+                }
+            }
+        },
         "api.ErrorResponse": {
             "description": "Standard API error response",
             "type": "object",

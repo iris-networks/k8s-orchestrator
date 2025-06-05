@@ -25,11 +25,14 @@ func main() {
 		log.Fatalf("Failed to create Kubernetes client: %v", err)
 	}
 
+	// Start the auto cleanup service to delete sandboxes after 15 minutes
+	k8sClient.StartAutoCleanupService(context.Background())
+
 	// Initialize router
 	router := gin.Default()
 
-	// Register routes with Traefik-enabled client
-	api.RegisterRoutesWithTraefik(router, k8sClient)
+	// Register routes
+	api.RegisterRoutes(router, k8sClient)
 
 	// Swagger documentation
 	url := ginSwagger.URL("/swagger/doc.json") // The URL pointing to API definition
