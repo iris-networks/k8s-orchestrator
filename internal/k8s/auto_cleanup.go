@@ -182,17 +182,11 @@ func (c *ClientWithTraefik) CleanupExpiredSandboxesByDuration(ctx context.Contex
 			if userID == "" {
 				log.Printf("No 'user' label found for deployment %s, trying to extract from name", deployment.Name)
 				
-				// Try to handle deployment name format: iris-{userId}-deployment
-				if strings.HasPrefix(deployment.Name, "iris-") && strings.HasSuffix(deployment.Name, "-deployment") {
-					// Extract the middle part between "iris-" and "-deployment"
-					namePart := strings.TrimPrefix(deployment.Name, "iris-")
-					extractedID := strings.TrimSuffix(namePart, "-deployment")
-					userID = extractedID
-					log.Printf("Extracted userID '%s' from iris-specific deployment name", userID)
-				} else if strings.HasSuffix(deployment.Name, "-deployment") {
-					// Try the standard format: {userId}-deployment
+				// Try to handle deployment name format: {userId}-deployment
+				if strings.HasSuffix(deployment.Name, "-deployment") {
+					// Standard format: {userId}-deployment
 					userID = strings.TrimSuffix(deployment.Name, "-deployment")
-					log.Printf("Extracted userID '%s' from standard deployment name", userID)
+					log.Printf("Extracted userID '%s' from deployment name", userID)
 				} else {
 					// Last resort: try to split by dash and take the second part
 					parts := strings.Split(deployment.Name, "-")

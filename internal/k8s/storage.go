@@ -85,7 +85,7 @@ func (c *Client) getNodeEnvVolume(userID string) corev1.Volume {
 		VolumeSource: corev1.VolumeSource{
 			ConfigMap: &corev1.ConfigMapVolumeSource{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: fmt.Sprintf("iris-%s-node-env", userID),
+					Name: fmt.Sprintf("%s-node-env", userID),
 				},
 			},
 		},
@@ -103,7 +103,7 @@ func (c *Client) getNodeEnvVolumeMount() corev1.VolumeMount {
 
 // createNodeEnvConfigMap creates a ConfigMap for Node.js specific environment variables
 func (c *Client) createNodeEnvConfigMap(ctx context.Context, userID string, nodeEnvVars map[string]string) error {
-	configMapName := fmt.Sprintf("iris-%s-node-env", userID)
+	configMapName := fmt.Sprintf("%s-node-env", userID)
 
 	// Convert the environment variables to a .env file format
 	envFileContent := ""
