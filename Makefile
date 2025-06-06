@@ -1,12 +1,13 @@
-.PHONY: build clean test run swagger docker-build docker-push gcr-auth docker-all create-gcr-secrets
+.PHONY: build clean test run swagger docker-build docker-push artifact-auth docker-all create-artifact-repo
 
 # Variables
 APP_NAME := k8sgo
 PROJECT_ID := driven-seer-460401-p9
-DOCKER_IMAGE := gcr.io/$(PROJECT_ID)/irisk8s
+REGION := us-central1
+REPOSITORY := k8sgo-repo
+DOCKER_IMAGE := $(REGION)-docker.pkg.dev/$(PROJECT_ID)/$(REPOSITORY)/irisk8s
 DOCKER_TAG := latest
 DOCKER_FULL_IMAGE := $(DOCKER_IMAGE):$(DOCKER_TAG)
-PLATFORM := linux/amd64
 BIN_DIR := ./bin
 
 
@@ -41,37 +42,31 @@ swagger:
 	@swag init -g internal/api/handlers.go
 
 
-# Build Docker image for linux/amd64
+# Build Docker image (ensuring linux/amd64 architecture)
 docker-build: 
-	@echo "Building Docker image $(DOCKER_FULL_IMAGE) for $(PLATFORM)..."
-	@docker build --platform $(PLATFORM) -t $(DOCKER_FULL_IMAGE) .
+	@echo "Building Docker image $(DOCKER_FULL_IMAGE) for linux/amd64..."
+	@docker build --platform linux/amd64 -t $(DOCKER_FULL_IMAGE) .
 
-# Authenticate with Google Cloud for GCR access
-gcr-auth:
-	@echo "Authenticating with Google Cloud for GCR access..."
-	@gcloud auth configure-docker gcr.io
+# Create Artifact Registry repository if it doesn't exist
+create-artifact-repo:
+	@echo "Checking if Artifact Registry repository exists..."
+	@if ! gcloud artifacts repositories describe $(REPOSITORY) --project=$(PROJECT_ID) --location=$(REGION) > /dev/null 2>&1; then \
+		echo "Creating Artifact Registry repository..."; \
+		gcloud artifacts repositories create $(REPOSITORY) --project=$(PROJECT_ID) --repository-format=docker --location=$(REGION) --description="K8sGo Docker images"; \
+	else \
+		echo "Artifact Registry repository already exists"; \
+	fi
 
-# Push Docker image to Google Container Registry (GCR)
-docker-push: gcr-auth docker-build
-	@echo "Pushing Docker image $(DOCKER_FULL_IMAGE) to Google Container Registry..."
+# Authenticate with Artifact Registry
+artifact-auth: create-artifact-repo
+	@echo "Authenticating with Google Artifact Registry..."
+	@gcloud auth configure-docker $(REGION)-docker.pkg.dev
+
+# Push Docker image to Google Artifact Registry
+docker-push: artifact-auth docker-build
+	@echo "Pushing Docker image $(DOCKER_FULL_IMAGE) to Google Artifact Registry..."
 	@docker push $(DOCKER_FULL_IMAGE)
 
-# All Docker tasks: generate swagger docs, build image, and push to GCR
+# All Docker tasks: generate swagger docs, build image, and push to Artifact Registry
 docker-all: swagger docker-push
-	@echo "Completed all Docker tasks: swagger docs, build, and push to GCR"
-
-# Create GCR pull secrets in both default and user-sandboxes namespaces
-# Note: Secrets using gcloud auth tokens expire after ~1 hour
-create-gcr-secrets:
-	@echo "Creating GCR pull secrets in default and user-sandboxes namespaces..."
-	@if [ ! -f .env ]; then \
-		echo "Creating .env file from .env.example..."; \
-		cp .env.example .env; \
-	fi
-	@echo "Creating secret in default namespace..."
-	@./scripts/create-gcr-secret.sh default
-	@echo "Creating secret in user-sandboxes namespace..."
-	@./scripts/create-gcr-secret.sh user-sandboxes
-	@echo "GCR pull secrets created successfully in both namespaces."
-	@echo "NOTE: If using gcloud auth, these secrets will expire after ~1 hour."
-	@echo "      Run this command again to refresh the tokens when needed."
+	@echo "Completed all Docker tasks: swagger docs, build, and push to Artifact Registry"

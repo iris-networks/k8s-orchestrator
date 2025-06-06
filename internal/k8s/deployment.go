@@ -79,7 +79,7 @@ func (c *Client) createDeployment(ctx context.Context, userID string) error {
 					Containers: []corev1.Container{
 						{
 							Name:  "sandbox",
-							Image: "gcr.io/driven-seer-460401-p9/iris_agent:latest",
+							Image: "us-central1-docker.pkg.dev/driven-seer-460401-p9/iris-repo/iris_agent:latest",
 							ImagePullPolicy: corev1.PullAlways,
 							Ports: []corev1.ContainerPort{
 								{

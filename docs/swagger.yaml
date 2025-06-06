@@ -4,7 +4,7 @@ definitions:
     properties:
       duration:
         description: Duration used for cleanup
-        example: 15 minutes
+        example: configurable timeout
         type: string
       message:
         description: Response message
@@ -47,8 +47,6 @@ definitions:
   api.SandboxRequest:
     description: Request to create a new sandbox.
     type: object
-    # This struct is now empty as we've removed environment variable passing.
-    # Kept for API compatibility.
   api.SandboxResponse:
     description: Sandbox creation response with URLs
     properties:
@@ -184,7 +182,7 @@ paths:
         name: userId
         required: true
         type: string
-      - description: Sandbox creation request
+      - description: Request body (empty, kept for API compatibility)
         in: body
         name: request
         schema:
