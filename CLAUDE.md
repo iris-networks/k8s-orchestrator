@@ -1,1 +1,2 @@
 - make sure file sizes are not more than 300 lines
+- Never touch swagger files, these are auto generated

@@ -211,7 +211,8 @@ func IsValidKubernetesName(name string) (bool, string) {
 }
 
 // CreateSandbox creates a new sandbox for a user with Traefik IngressRoutes
-func (c *ClientWithTraefik) CreateSandbox(userID string, envVars map[string]string, nodeEnvVars map[string]string) error {
+func (c *ClientWithTraefik) CreateSandbox(userID string) error {
+	// Previous parameters for environment variables have been removed
 	ctx := context.Background()
 
 	// Validate service name first
@@ -230,15 +231,8 @@ func (c *ClientWithTraefik) CreateSandbox(userID string, envVars map[string]stri
 		return err
 	}
 
-	// Create ConfigMap for Node.js environment variables if provided
-	if len(nodeEnvVars) > 0 {
-		if err := c.createNodeEnvConfigMap(ctx, userID, nodeEnvVars); err != nil {
-			return err
-		}
-	}
-
-	// Create deployment with environment variables
-	if err := c.createDeployment(ctx, userID, envVars, len(nodeEnvVars) > 0); err != nil {
+	// Create deployment
+	if err := c.createDeployment(ctx, userID); err != nil {
 		return err
 	}
 
@@ -293,11 +287,7 @@ func (c *ClientWithTraefik) DeleteSandbox(userID string) error {
 		log.Printf("Warning: Could not delete any deployment for userID: %s", userID)
 	}
 
-	// Delete Node.js environment ConfigMap using the correct name format
-	if err := c.clientset.CoreV1().ConfigMaps(c.namespace).Delete(ctx,
-		fmt.Sprintf("%s-node-env", userID), metav1.DeleteOptions{}); err != nil {
-		log.Printf("Error deleting Node.js env ConfigMap: %v", err)
-	}
+	// No longer need to delete Node.js environment ConfigMap as it's not created anymore
 
 	// Keep PVC for now (user data persistence)
 	// Uncomment to delete PVC as well

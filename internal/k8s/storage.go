@@ -78,48 +78,7 @@ func (c *Client) getUserDataVolumeMounts() []corev1.VolumeMount {
 	}
 }
 
-// getNodeEnvVolume returns a volume for Node.js environment variables
-func (c *Client) getNodeEnvVolume(userID string) corev1.Volume {
-	return corev1.Volume{
-		Name: "node-env",
-		VolumeSource: corev1.VolumeSource{
-			ConfigMap: &corev1.ConfigMapVolumeSource{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: fmt.Sprintf("%s-node-env", userID),
-				},
-			},
-		},
-	}
-}
+// This function has been removed as we no longer support .env file volume mounts
 
-// getNodeEnvVolumeMount returns a volume mount for Node.js environment variables
-func (c *Client) getNodeEnvVolumeMount() corev1.VolumeMount {
-	return corev1.VolumeMount{
-		Name:      "node-env",
-		MountPath: "/app/.env",
-		SubPath:   "node.env",
-	}
-}
-
-// createNodeEnvConfigMap creates a ConfigMap for Node.js specific environment variables
-func (c *Client) createNodeEnvConfigMap(ctx context.Context, userID string, nodeEnvVars map[string]string) error {
-	configMapName := fmt.Sprintf("%s-node-env", userID)
-
-	// Convert the environment variables to a .env file format
-	envFileContent := ""
-	for key, value := range nodeEnvVars {
-		envFileContent += fmt.Sprintf("%s=%s\n", key, value)
-	}
-
-	configMap := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: configMapName,
-		},
-		Data: map[string]string{
-			"node.env": envFileContent,
-		},
-	}
-
-	_, err := c.clientset.CoreV1().ConfigMaps(c.namespace).Create(ctx, configMap, metav1.CreateOptions{})
-	return err
-}
+// These functions have been removed as we no longer support .env file volume mounts
+// or environment variable passing from the API.

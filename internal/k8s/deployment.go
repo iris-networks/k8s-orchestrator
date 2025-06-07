@@ -12,22 +12,14 @@ import (
 )
 
 // createDeployment creates a deployment for the user's sandbox
-func (c *Client) createDeployment(ctx context.Context, userID string, envVars map[string]string, hasNodeEnv bool) error {
+func (c *Client) createDeployment(ctx context.Context, userID string) error {
 	deploymentName := fmt.Sprintf("%s-deployment", userID)
 
 	// Create deployment
 	var replicas int32 = 1
 
-	// Convert map of environment variables to Kubernetes EnvVar slice
+	// Only include the USER_ID environment variable
 	var envVarSlice []corev1.EnvVar
-	for key, value := range envVars {
-		envVarSlice = append(envVarSlice, corev1.EnvVar{
-			Name:  key,
-			Value: value,
-		})
-	}
-
-	// Always include the USER_ID environment variable
 	envVarSlice = append(envVarSlice, corev1.EnvVar{
 		Name:  "USER_ID",
 		Value: userID,
@@ -39,12 +31,6 @@ func (c *Client) createDeployment(ctx context.Context, userID string, envVars ma
 	// Get volumes for the pod from storage
 	volumes := []corev1.Volume{
 		c.getUserDataVolume(userID),
-	}
-
-	// Add Node.js environment variables ConfigMap if needed
-	if hasNodeEnv {
-		volumeMounts = append(volumeMounts, c.getNodeEnvVolumeMount())
-		volumes = append(volumes, c.getNodeEnvVolume(userID))
 	}
 
 	deployment := &appsv1.Deployment{
@@ -74,12 +60,13 @@ func (c *Client) createDeployment(ctx context.Context, userID string, envVars ma
 					// Add init container to set correct permissions on the volume
 					InitContainers: []corev1.Container{
 						{
-							Name:  "volume-permissions",
-							Image: "busybox",
+							Name:            "volume-permissions",
+							Image:           "busybox",
+							ImagePullPolicy: corev1.PullIfNotPresent,
 							Command: []string{
 								"sh",
 								"-c",
-								"mkdir -p /home/nodeuser/.iris && chmod -R 777 /home/nodeuser/.iris && mkdir -p /home/headless/.mozilla/firefox && chmod -R 777 /home/headless/.mozilla/firefox && mkdir -p /home/vncuser/.config && chmod -R 777 /home/vncuser/.config && rm -f /home/vncuser/.config/google-chrome/Singleton*",
+								"mkdir -p /home/nodeuser/.iris /home/headless/.mozilla/firefox /home/vncuser/.config & chmod -R 777 /home/nodeuser/.iris & chmod -R 777 /home/headless/.mozilla/firefox & chmod -R 777 /home/vncuser/.config & rm -f /home/vncuser/.config/google-chrome/Singleton* & rm -rf /home/nodeuser/.iris/user-data/Single* & wait",
 							},
 							VolumeMounts: c.getUserDataVolumeMounts(),
 							SecurityContext: &corev1.SecurityContext{
@@ -93,8 +80,8 @@ func (c *Client) createDeployment(ctx context.Context, userID string, envVars ma
 					Containers: []corev1.Container{
 						{
 							Name:  "sandbox",
-							Image: "shanurcsenitap/iris_agent:latest",
-							ImagePullPolicy: corev1.PullIfNotPresent,
+							Image: "us-central1-docker.pkg.dev/driven-seer-460401-p9/iris-repo/iris_agent:latest",
+							ImagePullPolicy: corev1.PullAlways,
 							Ports: []corev1.ContainerPort{
 								{
 									ContainerPort: 6901,
@@ -124,11 +111,11 @@ func (c *Client) createDeployment(ctx context.Context, userID string, envVars ma
 										Port: intstr.FromInt(3000),
 									},
 								},
-								InitialDelaySeconds: 5,
+								InitialDelaySeconds: 1,
 								TimeoutSeconds:      5,
-								PeriodSeconds:       15,
+								PeriodSeconds:       3,
 								SuccessThreshold:    1,
-								FailureThreshold:    3,
+								FailureThreshold:    4,
 							},
 							ReadinessProbe: &corev1.Probe{
 								ProbeHandler: corev1.ProbeHandler{
@@ -137,7 +124,7 @@ func (c *Client) createDeployment(ctx context.Context, userID string, envVars ma
 										Port: intstr.FromInt(3000),
 									},
 								},
-								InitialDelaySeconds: 1,
+								InitialDelaySeconds: 5,
 								TimeoutSeconds:      1,
 								PeriodSeconds:       3,
 								SuccessThreshold:    1,

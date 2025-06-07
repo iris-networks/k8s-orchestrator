@@ -2,30 +2,30 @@
 set -e
 
 # Configuration
-IMAGE_NAME="shanurcsenitap/irisk8s"  # Docker Hub username/repo
-VERSION="amd64"                  # Specific version tag
-PLATFORMS="linux/amd64"          # Only build for amd64
+PROJECT_ID="driven-seer-460401-p9"  # Google Cloud Project ID
+REGION="us-central1"  # Same region as your GKE cluster
+REPOSITORY="k8sgo-repo"  # Repository name in Artifact Registry
+IMAGE_NAME="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/irisk8s"  # Artifact Registry image path
+VERSION="latest"  # Version tag
 
-# Ensure Docker buildx is available
-if ! docker buildx version > /dev/null 2>&1; then
-  echo "Error: Docker buildx is not available"
-  exit 1
+# Create Artifact Registry repository if it doesn't exist
+if ! gcloud artifacts repositories describe ${REPOSITORY} --project=${PROJECT_ID} --location=${REGION} > /dev/null 2>&1; then
+  echo "Creating Artifact Registry repository..."
+  gcloud artifacts repositories create ${REPOSITORY} \
+    --project=${PROJECT_ID} \
+    --repository-format=docker \
+    --location=${REGION} \
+    --description="K8sGo Docker images"
 fi
 
-# Use builder or create one if it doesn't exist
-if ! docker buildx use amd64-builder > /dev/null 2>&1; then
-  echo "Creating new buildx builder instance..."
-  docker buildx create --name amd64-builder --use
-fi
+# Authenticate with Artifact Registry
+echo "Authenticating with Google Artifact Registry..."
+gcloud auth configure-docker ${REGION}-docker.pkg.dev
 
-# Build and push the image
-echo "Building and pushing Linux AMD64 image..."
-docker buildx build \
-  --platform ${PLATFORMS} \
-  --tag ${IMAGE_NAME}:${VERSION} \
-  --tag ${IMAGE_NAME}:latest \
-  --push \
-  .
+# Build and push the image for linux/amd64
+echo "Building and pushing Docker image for linux/amd64..."
+docker build --platform linux/amd64 -t ${IMAGE_NAME}:${VERSION} .
+docker push ${IMAGE_NAME}:${VERSION}
 
-echo "Linux AMD64 image built and pushed successfully!"
-echo "Image: ${IMAGE_NAME}:${VERSION} and ${IMAGE_NAME}:latest"
+echo "Docker image built and pushed successfully to Google Artifact Registry!"
+echo "Image: ${IMAGE_NAME}:${VERSION}"

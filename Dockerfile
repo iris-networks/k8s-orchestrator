@@ -1,4 +1,4 @@
-FROM golang:1.21-alpine AS builder
+FROM --platform=linux/amd64 golang:1.21-alpine AS builder
 
 # Set working directory
 WORKDIR /app
@@ -19,11 +19,11 @@ COPY . .
 RUN go install github.com/swaggo/swag/cmd/swag@latest
 RUN swag init
 
-# Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o k8sgo .
+# Build the application with explicit GOOS and GOARCH for Linux AMD64
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -o k8sgo .
 
 # Create a minimal production image
-FROM alpine:3.18
+FROM --platform=linux/amd64 alpine:3.18
 
 # Install CA certificates for HTTPS
 RUN apk --no-cache add ca-certificates

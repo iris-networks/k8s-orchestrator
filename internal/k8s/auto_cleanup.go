@@ -11,11 +11,13 @@ import (
 )
 
 const (
-	// ResourceExpirationTime is the duration after which a sandbox will be automatically deleted
-	ResourceExpirationTime = 15 * time.Minute
 	// DefaultAuthToken is the auth token for external cleanup trigger
 	DefaultAuthToken = "k8s-auto-cleanup-token"
 )
+
+// ResourceExpirationTime is the duration after which a sandbox will be automatically deleted
+// Deprecated: Use Config.SandboxTimeoutDuration instead
+var ResourceExpirationTime time.Duration
 
 // StartAutoCleanupService starts a background goroutine that periodically checks for sandboxes
 // that have been running for more than ResourceExpirationTime and deletes them
@@ -36,7 +38,8 @@ func (c *Client) StartAutoCleanupService(ctx context.Context) {
 			}
 		}
 	}()
-	log.Println("Auto cleanup service started - sandboxes will be deleted after 15 minutes")
+	timeoutMinutes := int(c.config.SandboxTimeoutDuration.Minutes())
+	log.Printf("Auto cleanup service started - sandboxes will be deleted after %d minutes", timeoutMinutes)
 }
 
 // cleanupExpiredSandboxes checks for and deletes sandboxes that have been running for too long
@@ -51,11 +54,11 @@ func (c *Client) cleanupExpiredSandboxes(ctx context.Context) error {
 
 	now := time.Now()
 	for _, deployment := range deployments.Items {
-		// Check if the deployment has been running for more than ResourceExpirationTime
+		// Check if the deployment has been running for more than the configured timeout
 		creationTime := deployment.CreationTimestamp.Time
 		age := now.Sub(creationTime)
 
-		if age >= ResourceExpirationTime {
+		if age >= c.config.SandboxTimeoutDuration {
 			// Extract user ID from labels or deployment name
 			userID := deployment.Labels["user"]
 			if userID == "" {
@@ -93,7 +96,8 @@ func (c *ClientWithTraefik) StartAutoCleanupService(ctx context.Context) {
 			}
 		}
 	}()
-	log.Println("Auto cleanup service started - sandboxes will be deleted after 15 minutes")
+	timeoutMinutes := int(c.config.SandboxTimeoutDuration.Minutes())
+	log.Printf("Auto cleanup service started - sandboxes will be deleted after %d minutes", timeoutMinutes)
 }
 
 // cleanupExpiredSandboxes checks for and deletes sandboxes that have been running for too long
@@ -108,11 +112,11 @@ func (c *ClientWithTraefik) cleanupExpiredSandboxes(ctx context.Context) error {
 
 	now := time.Now()
 	for _, deployment := range deployments.Items {
-		// Check if the deployment has been running for more than ResourceExpirationTime
+		// Check if the deployment has been running for more than the configured timeout
 		creationTime := deployment.CreationTimestamp.Time
 		age := now.Sub(creationTime)
 
-		if age >= ResourceExpirationTime {
+		if age >= c.config.SandboxTimeoutDuration {
 			// Extract user ID from labels or deployment name
 			userID := deployment.Labels["user"]
 			if userID == "" {

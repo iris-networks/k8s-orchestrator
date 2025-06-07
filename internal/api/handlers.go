@@ -57,7 +57,7 @@ func (h *SandboxHandler) ListSandboxes(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        userId path string true "User ID"
-// @Param        request body SandboxRequest false "Environment variables to pass to the container"
+// @Param        request body SandboxRequest false "Request body (empty, kept for API compatibility)"
 // @Success      201 {object} SandboxResponse
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
@@ -71,7 +71,7 @@ func (h *SandboxHandler) CreateSandbox(c *gin.Context) {
 		return
 	}
 
-	// Parse request body to get environment variables
+	// Parse request body (now empty as we no longer accept environment variables)
 	var request SandboxRequest
 	if err := c.ShouldBindJSON(&request); err != nil && err.Error() != "EOF" {
 		// Only return error if it's not an empty body
@@ -81,15 +81,8 @@ func (h *SandboxHandler) CreateSandbox(c *gin.Context) {
 		return
 	}
 
-	// Initialize empty maps if no env vars were provided
-	if request.EnvVars == nil {
-		request.EnvVars = make(map[string]string)
-	}
-	if request.NodeEnvVars == nil {
-		request.NodeEnvVars = make(map[string]string)
-	}
-
-	err := h.k8sClient.CreateSandbox(userID, request.EnvVars, request.NodeEnvVars)
+	// Create the sandbox
+	err := h.k8sClient.CreateSandbox(userID)
 	if err != nil {
 		// Check if error is related to service name validation
 		if strings.Contains(err.Error(), "invalid user ID for Kubernetes service") {

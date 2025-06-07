@@ -63,7 +63,7 @@ make docker-all
 This will:
 1. Generate Swagger documentation
 2. Build the Docker image
-3. Push the image to Docker Hub at `shanurcsenitap/irisk8s:latest`
+3. Push the image to the container registry
 
 ### Run locally
 
@@ -90,8 +90,19 @@ Swagger documentation will be available at http://localhost:8080/swagger/index.h
 
 ## Deployment
 
-For deployment instructions to Google Kubernetes Engine, see the [GKE Deployment Guide](docs/deployment/gke-deployment-guide.md).
+
+### Deploy to Kubernetes
+
+```bash
+kubectl apply -f kubernetes/manifests/
+```
+
+For full deployment instructions to Google Kubernetes Engine, see the [GKE Deployment Guide](docs/deployment/gke-deployment-guide.md).
 
 ## License
 
 This project is licensed under the Apache License 2.0 - see the LICENSE file for details.
+
+
+gcloud artifacts repositories add-iam-policy-binding iris-repo --location=us-central1 --member="serviceAccount:700217436700-compute@developer.gserviceaccount.com" …
+      --role="roles/artifactregistry.reader"

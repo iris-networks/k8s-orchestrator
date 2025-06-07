@@ -94,7 +94,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Environment variables to pass to the container",
+                        "description": "Request body (empty, kept for API compatibility)",
                         "name": "request",
                         "in": "body",
                         "schema": {
@@ -254,7 +254,7 @@ const docTemplate = `{
                 "duration": {
                     "description": "Duration used for cleanup",
                     "type": "string",
-                    "example": "15 minutes"
+                    "example": "configurable timeout"
                 },
                 "message": {
                     "description": "Response message",
@@ -309,32 +309,8 @@ const docTemplate = `{
             }
         },
         "api.SandboxRequest": {
-            "description": "Request to create a new sandbox with optional environment variables.",
-            "type": "object",
-            "properties": {
-                "envVars": {
-                    "description": "EnvVars contains key-value pairs of environment variables to pass to the container.\nExample: {\"DEBUG\":\"true\", \"API_KEY\":\"abc123\"}",
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    },
-                    "example": {
-                        " \"API_KEY\"": "\"abc123\"}",
-                        "{\"DEBUG\"": "\"true\""
-                    }
-                },
-                "nodeEnvVars": {
-                    "description": "NodeEnvVars contains environment variables specifically for the Node.js process.\nThese will be passed only to the Node.js process running as nodeuser.\nExample: {\"NODE_ENV\":\"production\", \"PORT\":\"3000\"}",
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    },
-                    "example": {
-                        " \"PORT\"": "\"3000\"}",
-                        "{\"NODE_ENV\"": "\"production\""
-                    }
-                }
-            }
+            "description": "Request to create a new sandbox.",
+            "type": "object"
         },
         "api.SandboxResponse": {
             "description": "Sandbox creation response with URLs",
