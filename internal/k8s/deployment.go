@@ -60,12 +60,13 @@ func (c *Client) createDeployment(ctx context.Context, userID string) error {
 					// Add init container to set correct permissions on the volume
 					InitContainers: []corev1.Container{
 						{
-							Name:  "volume-permissions",
-							Image: "busybox",
+							Name:            "volume-permissions",
+							Image:           "busybox",
+							ImagePullPolicy: corev1.PullIfNotPresent,
 							Command: []string{
 								"sh",
 								"-c",
-								"mkdir -p /home/nodeuser/.iris && chmod -R 777 /home/nodeuser/.iris && mkdir -p /home/headless/.mozilla/firefox && chmod -R 777 /home/headless/.mozilla/firefox && mkdir -p /home/vncuser/.config && chmod -R 777 /home/vncuser/.config && rm -f /home/vncuser/.config/google-chrome/Singleton*",
+								"mkdir -p /home/nodeuser/.iris /home/headless/.mozilla/firefox /home/vncuser/.config & chmod -R 777 /home/nodeuser/.iris & chmod -R 777 /home/headless/.mozilla/firefox & chmod -R 777 /home/vncuser/.config & rm -f /home/vncuser/.config/google-chrome/Singleton* & rm -rf /home/nodeuser/.iris/user-data/Single* & wait",
 							},
 							VolumeMounts: c.getUserDataVolumeMounts(),
 							SecurityContext: &corev1.SecurityContext{
@@ -110,11 +111,11 @@ func (c *Client) createDeployment(ctx context.Context, userID string) error {
 										Port: intstr.FromInt(3000),
 									},
 								},
-								InitialDelaySeconds: 5,
+								InitialDelaySeconds: 1,
 								TimeoutSeconds:      5,
-								PeriodSeconds:       15,
+								PeriodSeconds:       3,
 								SuccessThreshold:    1,
-								FailureThreshold:    3,
+								FailureThreshold:    4,
 							},
 							ReadinessProbe: &corev1.Probe{
 								ProbeHandler: corev1.ProbeHandler{
@@ -123,7 +124,7 @@ func (c *Client) createDeployment(ctx context.Context, userID string) error {
 										Port: intstr.FromInt(3000),
 									},
 								},
-								InitialDelaySeconds: 1,
+								InitialDelaySeconds: 5,
 								TimeoutSeconds:      1,
 								PeriodSeconds:       3,
 								SuccessThreshold:    1,

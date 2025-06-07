@@ -63,7 +63,7 @@ make docker-all
 This will:
 1. Generate Swagger documentation
 2. Build the Docker image
-3. Push the image to Google Container Registry at `gcr.io/driven-seer-460401-p9/irisk8s:latest`
+3. Push the image to the container registry
 
 ### Run locally
 
@@ -90,33 +90,6 @@ Swagger documentation will be available at http://localhost:8080/swagger/index.h
 
 ## Deployment
 
-### GCR Image Authentication
-
-For pulling images from Google Container Registry, you need to set up authentication:
-
-1. Create a `.env` file from the template:
-   ```bash
-   cp .env.example .env
-   ```
-
-2. Configure GCR authentication in the `.env` file:
-   ```
-   # For gcloud authentication (development)
-   USE_GCLOUD_AUTH=true
-
-   # OR for service account authentication (production)
-   GCR_JSON_KEY=<your-json-key>
-   ```
-
-3. Create the Kubernetes secret for GCR authentication:
-   ```bash
-   ./scripts/create-gcr-secret.sh
-
-   # For user-sandboxes namespace
-   ./scripts/create-gcr-secret.sh user-sandboxes
-   ```
-
-For detailed instructions, see the [GCR Authentication Setup](docs/deployment/gcr-auth-setup.md).
 
 ### Deploy to Kubernetes
 
@@ -129,3 +102,7 @@ For full deployment instructions to Google Kubernetes Engine, see the [GKE Deplo
 ## License
 
 This project is licensed under the Apache License 2.0 - see the LICENSE file for details.
+
+
+gcloud artifacts repositories add-iam-policy-binding iris-repo --location=us-central1 --member="serviceAccount:700217436700-compute@developer.gserviceaccount.com" …
+      --role="roles/artifactregistry.reader"

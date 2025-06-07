@@ -43,22 +43,52 @@ gcloud container clusters get-credentials $CLUSTER_NAME --region=$REGION --proje
 
 ## 3. Setting Up Artifact Registry for Container Images
 
-Instead of using Container Registry (gcr.io) with manual pull secrets, we'll use Artifact Registry which provides better regional isolation and simpler authentication.
+We'll use Artifact Registry which provides regional isolation and simple authentication.
 
 ```bash
-# Create an Artifact Registry repository in the same region as your GKE cluster
-REGION="us-central1"  # Must match region prefix of your GKE cluster
+# Set variables for Artifact Registry setup
 PROJECT_ID="driven-seer-460401-p9"
+REGION="us-central1"  # Must match region prefix of your GKE cluster
 REPOSITORY="k8sgo-repo"
 
+# Create a repository for the k8sgo application
 gcloud artifacts repositories create $REPOSITORY \
   --project=$PROJECT_ID \
   --repository-format=docker \
   --location=$REGION \
   --description="K8sGo Docker images"
 
+# Create a repository for sandboxes (if needed)
+gcloud artifacts repositories create iris-repo \
+  --project=$PROJECT_ID \
+  --repository-format=docker \
+  --location=$REGION \
+  --description="Sandbox Docker images"
+
 # Authenticate Docker with Artifact Registry
 gcloud auth configure-docker $REGION-docker.pkg.dev
+```
+
+### Grant GKE Node Service Account Access to Artifact Registry
+
+By default, the GKE node service account can pull from repositories in the same project and region. If you have issues pulling images in different namespaces, you need to explicitly grant access:
+
+```bash
+# Get the GKE node service account (typically PROJECT_NUMBER-compute@developer.gserviceaccount.com)
+PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format="value(projectNumber)")
+NODE_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+
+# Grant access to the k8sgo repository
+gcloud artifacts repositories add-iam-policy-binding $REPOSITORY \
+  --location=$REGION \
+  --member="serviceAccount:${NODE_SA}" \
+  --role="roles/artifactregistry.reader"
+
+# Grant access to the iris repository for sandboxes
+gcloud artifacts repositories add-iam-policy-binding iris-repo \
+  --location=$REGION \
+  --member="serviceAccount:${NODE_SA}" \
+  --role="roles/artifactregistry.reader"
 ```
 
 ### Building and Pushing Images for GKE Compatibility
@@ -83,16 +113,6 @@ make docker-push
 ./build-multiarch.sh
 ```
 
-### Image Pull Authentication
-
-GKE nodes automatically have access to pull images from:
-- Artifact Registry repositories in the same project and same region
-- Container Registry (gcr.io) in the same project
-
-No additional pull secrets are required as long as your:
-1. Image is in the same Google Cloud project as your GKE cluster
-2. Artifact Registry repository is in the same region as your GKE cluster
-
 ## 4. Deploying Traefik
 
 ```bash
@@ -112,7 +132,9 @@ The `deploy-traefik.sh` script will:
 4. Apply IngressRoute for api.tryiris.dev
 
 ## 5. Deploying Application Manifests
+
 ```bash
+# Deploy all manifests using kustomize
 kubectl kustomize kubernetes/manifests/ | kubectl apply -f -
 ```
 
@@ -173,22 +195,30 @@ curl -X DELETE https://api.tryiris.dev/v1/sandbox/test-user
 ## Troubleshooting
 
 ### Image Pull Issues
+
 ```bash
 # Check pod events for image pull errors
 kubectl describe pod [pod-name]
 
-# Check if the image architecture matches your GKE nodes
+# Verify the GKE node service account has access to your repositories
+PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format="value(projectNumber)")
+NODE_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+
+# Grant access to the repository that's having pull issues
+gcloud artifacts repositories add-iam-policy-binding [REPOSITORY_NAME] \
+  --location=$REGION \
+  --member="serviceAccount:${NODE_SA}" \
+  --role="roles/artifactregistry.reader"
+
+# If building from Mac (especially with M1/M2/M3), ensure you build with --platform=linux/amd64
 # GKE nodes typically run linux/amd64 architecture
-# If using Mac (especially with M1/M2/M3), ensure you build with --platform=linux/amd64
 
-# Verify image in Artifact Registry
-gcloud artifacts docker images list $REGION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/irisk8s
-
-# Ensure service account has access to Artifact Registry
-# GKE node service accounts have automatic access to same-project, same-region repositories
+# Verify image exists in Artifact Registry
+gcloud artifacts docker images list $REGION-docker.pkg.dev/$PROJECT_ID/[REPOSITORY_NAME]/[IMAGE_NAME]
 ```
 
 ### Traefik Issues
+
 ```bash
 # Check Traefik pods
 kubectl get pods -n default | grep traefik
@@ -202,6 +232,7 @@ kubectl describe ingressroute k8sgo-api
 ```
 
 ### DNS Issues
+
 ```bash
 # Check if DNS records are properly configured in Cloudflare
 # Verify they point to your Traefik LoadBalancer IP
@@ -213,12 +244,14 @@ curl -k --resolve api.tryiris.dev:443:$(kubectl get svc traefik -o=jsonpath='{.s
 ```
 
 ### RBAC Issues
+
 ```bash
 # Check if RBAC is properly configured
 kubectl auth can-i create ingressroute --as=system:serviceaccount:default:k8sgo-sa
 ```
 
 ### Application Issues
+
 ```bash
 # Check application logs
 kubectl logs -l app=k8sgo
