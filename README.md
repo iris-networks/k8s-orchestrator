@@ -1,22 +1,29 @@
 # Kubernetes Sandbox Platform
 
-A Golang service that manages per-user containerized sandboxes using Kubernetes APIs.
+A Kubernetes-based service that provides isolated, browser-accessible desktop environments for users, powering https://agent.tryiris.dev.
 
-## Overview
+## Why This Was Built
 
-This service allows for creating and managing isolated user environments (sandboxes) in a Kubernetes cluster. Each sandbox provides:
+This platform was built to:
+- Provide isolated sandbox environments for security testing and training
+- Enable users to access desktop environments through browsers without local software installation
+- Create disposable, isolated Linux environments that automatically clean up after use
+- Support educational and training scenarios requiring isolated workspaces
+- Facilitate safe web browsing in containerized environments
 
-- Linux desktop environment with Firefox browser
-- VNC access via web browser
-- Persistent storage that survives container restarts
-- Unique subdomains for each user
+## Exposed Ports
+
+- **API Server**: 8080 (container), mapped to 80 (service)
+- **Per Sandbox VNC**: Port 6901 via unique subdomain (e.g., user123-vnc.tryiris.dev)
+- **Per Sandbox HTTP**: Port 3000 via unique subdomain (e.g., user123-api.tryiris.dev)
 
 ## Features
 
 - **Container Management**: Create/delete user sandboxes using `accetto/ubuntu-vnc-xfce-firefox-g3` image
-- **Persistent Storage**: Attach user-specific persistent volumes
-- **Dynamic Subdomains**: Provision unique subdomains per user using Traefik
-- **REST API**: Endpoints for container lifecycle management
+- **Persistent Storage**: Attach user-specific persistent volumes that survive container restarts
+- **Dynamic Subdomains**: Provision unique subdomains per user via Traefik
+- **Auto-Cleanup**: Sandboxes are automatically removed after 15 minutes of inactivity
+- **REST API**: Simple endpoints for container lifecycle management
 
 ## Prerequisites
 
@@ -54,26 +61,46 @@ make swagger
 
 ## Usage
 
-### Build and Push Docker image
+### Building and Deploying
 
 ```bash
+# Build and push Docker image
 make docker-all
+
+# Deploy to Kubernetes
+kubectl apply -f kubernetes/manifests/
 ```
 
-This will:
-1. Generate Swagger documentation
-2. Build the Docker image
-3. Push the image to the container registry
-
-### Run locally
+### Running Locally
 
 ```bash
 make run
 ```
 
 The API will be available at http://localhost:8080
-
 Swagger documentation will be available at http://localhost:8080/swagger/index.html
+
+### Creating a Sandbox
+
+```bash
+# Create a sandbox for user "user123"
+curl -X POST http://localhost:8080/v1/sandbox/user123
+
+# The response will include a URL to access the sandbox via VNC web interface
+```
+
+### Managing Sandboxes
+
+```bash
+# List all sandboxes
+curl http://localhost:8080/v1/sandboxes
+
+# Get status of a specific sandbox
+curl http://localhost:8080/v1/sandbox/user123/status
+
+# Delete a sandbox
+curl -X DELETE http://localhost:8080/v1/sandbox/user123
+```
 
 ## API Endpoints
 
@@ -90,19 +117,8 @@ Swagger documentation will be available at http://localhost:8080/swagger/index.h
 
 ## Deployment
 
-
-### Deploy to Kubernetes
-
-```bash
-kubectl apply -f kubernetes/manifests/
-```
-
 For full deployment instructions to Google Kubernetes Engine, see the [GKE Deployment Guide](docs/deployment/gke-deployment-guide.md).
 
 ## License
 
 This project is licensed under the Apache License 2.0 - see the LICENSE file for details.
-
-
-gcloud artifacts repositories add-iam-policy-binding iris-repo --location=us-central1 --member="serviceAccount:700217436700-compute@developer.gserviceaccount.com" …
-      --role="roles/artifactregistry.reader"
