@@ -81,7 +81,7 @@ func (c *Client) createDeployment(ctx context.Context, userID string) error {
 						{
 							Name:  "sandbox",
 							Image: "us-central1-docker.pkg.dev/driven-seer-460401-p9/iris-repo/iris_agent:latest",
-							ImagePullPolicy: corev1.PullAlways,
+							ImagePullPolicy: corev1.PullIfNotPresent,
 							Ports: []corev1.ContainerPort{
 								{
 									ContainerPort: 6901,

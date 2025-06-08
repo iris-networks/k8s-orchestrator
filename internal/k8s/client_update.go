@@ -310,7 +310,7 @@ func (c *ClientWithTraefik) ListSandboxes(ctx context.Context) ([]SandboxInfo, e
 
 // GetSandboxStatus retrieves the status of a specific sandbox by user ID
 func (c *ClientWithTraefik) GetSandboxStatus(ctx context.Context, userID string) (*SandboxInfo, error) {
-	// Reuse the base client's implementation
+	// Reuse the base client's implementation with enhanced status details
 	return c.Client.GetSandboxStatus(ctx, userID)
 }
 

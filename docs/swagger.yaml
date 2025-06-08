@@ -87,10 +87,63 @@ definitions:
         example: user123
         type: string
     type: object
+  k8s.ContainerStatus:
+    properties:
+      image:
+        example: us-central1-docker.pkg.dev/driven-seer-460401-p9/iris-repo/iris_agent:latest
+        type: string
+      message:
+        example: ""
+        type: string
+      name:
+        example: sandbox
+        type: string
+      ready:
+        example: true
+        type: boolean
+      reason:
+        example: ""
+        type: string
+      restartCount:
+        example: 0
+        type: integer
+      state:
+        example: running
+        type: string
+    type: object
   k8s.SandboxInfo:
     properties:
+      containerStatuses:
+        items:
+          $ref: '#/definitions/k8s.ContainerStatus'
+        type: array
       createdAt:
         example: "2023-04-20T12:00:00Z"
+        type: string
+      initContainerStatuses:
+        items:
+          $ref: '#/definitions/k8s.ContainerStatus'
+        type: array
+      message:
+        example: ""
+        type: string
+      podConditions:
+        example:
+        - '["PodScheduled"'
+        - '"Initialized"'
+        - '"ContainersReady"'
+        - '"Ready"]'
+        items:
+          type: string
+        type: array
+      podName:
+        example: user123-deployment-5d8b9c7b8f-2p8x7
+        type: string
+      podPhase:
+        example: Running
+        type: string
+      reason:
+        example: ""
         type: string
       status:
         example: Running

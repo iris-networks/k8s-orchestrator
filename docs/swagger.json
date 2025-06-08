@@ -353,12 +353,85 @@
                 }
             }
         },
+        "k8s.ContainerStatus": {
+            "type": "object",
+            "properties": {
+                "image": {
+                    "type": "string",
+                    "example": "us-central1-docker.pkg.dev/driven-seer-460401-p9/iris-repo/iris_agent:latest"
+                },
+                "message": {
+                    "type": "string",
+                    "example": ""
+                },
+                "name": {
+                    "type": "string",
+                    "example": "sandbox"
+                },
+                "ready": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "reason": {
+                    "type": "string",
+                    "example": ""
+                },
+                "restartCount": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "state": {
+                    "type": "string",
+                    "example": "running"
+                }
+            }
+        },
         "k8s.SandboxInfo": {
             "type": "object",
             "properties": {
+                "containerStatuses": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/k8s.ContainerStatus"
+                    }
+                },
                 "createdAt": {
                     "type": "string",
                     "example": "2023-04-20T12:00:00Z"
+                },
+                "initContainerStatuses": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/k8s.ContainerStatus"
+                    }
+                },
+                "message": {
+                    "type": "string",
+                    "example": ""
+                },
+                "podConditions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"PodScheduled\"",
+                        "\"Initialized\"",
+                        "\"ContainersReady\"",
+                        "\"Ready\"]"
+                    ]
+                },
+                "podName": {
+                    "type": "string",
+                    "example": "user123-deployment-5d8b9c7b8f-2p8x7"
+                },
+                "podPhase": {
+                    "type": "string",
+                    "example": "Running"
+                },
+                "reason": {
+                    "type": "string",
+                    "example": ""
                 },
                 "status": {
                     "type": "string",
