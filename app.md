@@ -4,7 +4,7 @@
 Build a Golang service that manages per-user containerized sandboxes using Kubernetes APIs.
 
 ## Core Functionality
-- **Container Management**: Create/delete user sandboxes using `accetto/ubuntu-vnc-xfce-firefox-g3` image
+- **Container Management**: Create/delete user sandboxes using a customized image with Chromium browser
 - **Persistent Storage**: Attach user-specific persistent volumes that survive container restarts
 - **Dynamic Subdomains**: Provision unique subdomains per user using Traefik
 - **REST API**: Expose endpoints for container lifecycle management
@@ -12,7 +12,7 @@ Build a Golang service that manages per-user containerized sandboxes using Kuber
 ## Technical Specifications
 
 ### Container Configuration
-- **Image**: `accetto/ubuntu-vnc-xfce-firefox-g3`
+- **Image**: Custom image with Chromium browser
 - **Exposed Ports**: 
   - Port 6901 (VNC server)
   - Port 3000 (HTTP server)

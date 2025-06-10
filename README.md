@@ -19,7 +19,7 @@ This platform was built to:
 
 ## Features
 
-- **Container Management**: Create/delete user sandboxes using `accetto/ubuntu-vnc-xfce-firefox-g3` image
+- **Container Management**: Create/delete user sandboxes using a customized image with Chromium browser
 - **Persistent Storage**: Attach user-specific persistent volumes that survive container restarts
 - **Dynamic Subdomains**: Provision unique subdomains per user via Traefik
 - **Auto-Cleanup**: Sandboxes are automatically removed after 15 minutes of inactivity
@@ -122,3 +122,10 @@ For full deployment instructions to Google Kubernetes Engine, see the [GKE Deplo
 ## License
 
 This project is licensed under the Apache License 2.0 - see the LICENSE file for details.
+
+
+
+----
+
+
+gcloud artifacts repositories add-iam-policy-binding iris-repo --location=us-central1 --member="serviceAccount:xxxxxxx-compute@developer.gserviceaccount.com" … --role="roles/artifactregistry.reader"

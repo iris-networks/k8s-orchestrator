@@ -66,7 +66,7 @@ func (c *Client) createDeployment(ctx context.Context, userID string) error {
 							Command: []string{
 								"sh",
 								"-c",
-								"mkdir -p /home/nodeuser/.iris /home/headless/.mozilla/firefox /home/vncuser/.config & chmod -R 777 /home/nodeuser/.iris & chmod -R 777 /home/headless/.mozilla/firefox & chmod -R 777 /home/vncuser/.config & rm -f /home/vncuser/.config/google-chrome/Singleton* & rm -rf /home/nodeuser/.iris/user-data/Single* & wait",
+								"mkdir -p /home/nodeuser/.iris /home/vncuser/.config & chmod -R 777 /home/nodeuser/.iris & chmod -R 777 /home/vncuser/.config & rm -f /home/vncuser/.config/chromium/Singleton* & rm -rf /home/nodeuser/.iris/user-data/Single* & wait",
 							},
 							VolumeMounts: c.getUserDataVolumeMounts(),
 							SecurityContext: &corev1.SecurityContext{

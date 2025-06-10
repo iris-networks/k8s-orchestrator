@@ -64,16 +64,12 @@ func (c *Client) getUserDataVolumeMounts() []corev1.VolumeMount {
 		},
 		{
 			Name:      "user-data",
-			MountPath: "/home/headless/.mozilla/firefox",
-		},
-		{
-			Name:      "user-data",
 			MountPath: "/home/vncuser/.config",
 		},
 		{
 			Name:      "user-data",
-			MountPath: "/home/vncuser/.config/google-chrome",
-			SubPath:   "chrome-data",
+			MountPath: "/home/vncuser/.config/chromium",
+			SubPath:   "chromium-data",
 		},
 	}
 }
