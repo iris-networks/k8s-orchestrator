@@ -1,4 +1,4 @@
-.PHONY: build clean test run swagger docker-build docker-push artifact-auth docker-all create-artifact-repo create-configmap deploy
+.PHONY: build clean test run swagger docker-build docker-push artifact-auth docker-all create-artifact-repo deploy
 
 # Variables
 APP_NAME := k8sgo
@@ -6,10 +6,9 @@ PROJECT_ID := driven-seer-460401-p9
 REGION := us-central1
 REPOSITORY := k8sgo-repo
 DOCKER_IMAGE := $(REGION)-docker.pkg.dev/$(PROJECT_ID)/$(REPOSITORY)/irisk8s
-DOCKER_TAG := $(shell date +%Y%m%d-%H%M%S)-$(shell git rev-parse --short HEAD)
+DOCKER_TAG := $(shell git rev-parse --short HEAD)
 DOCKER_FULL_IMAGE := $(DOCKER_IMAGE):$(DOCKER_TAG)
 BIN_DIR := ./bin
-CONTAINER_IMAGE_TAG := $(DOCKER_TAG)
 
 
 # Build the Go binary
@@ -74,19 +73,12 @@ docker-all: swagger docker-push
 
 # Build, push and deploy with same tag
 docker-deploy: docker-all deploy
-	@echo "Completed build, push and deploy with tag: $(CONTAINER_IMAGE_TAG)"
+	@echo "Completed build, push and deploy with tag: $(DOCKER_TAG)"
 
-# Create or update ConfigMap for application configuration
-create-configmap:
-	@echo "Creating/updating ConfigMap with container image tag: $(CONTAINER_IMAGE_TAG)..."
-	@kubectl create configmap app-config \
-		--from-literal=container-image-tag=$(CONTAINER_IMAGE_TAG) \
-		--namespace=user-sandboxes \
-		--dry-run=client -o yaml | kubectl apply -f -
 
-# Deploy application using kustomize with the current image tag
-deploy: create-configmap
-	@echo "Deploying k8sgo with image tag: $(CONTAINER_IMAGE_TAG)..."
-	@cd kubernetes/manifests && kustomize edit set image us-central1-docker.pkg.dev/driven-seer-460401-p9/k8sgo-repo/irisk8s:$(CONTAINER_IMAGE_TAG)
-	@kubectl apply -k kubernetes/manifests
-	@echo "Deployment complete with tag: $(CONTAINER_IMAGE_TAG)"
+# Deploy application using kubectl with the current image tag
+deploy:
+	@echo "Deploying k8sgo with image tag: $(DOCKER_TAG)..."
+	@sed -i '' 's|image: us-central1-docker.pkg.dev/driven-seer-460401-p9/k8sgo-repo/irisk8s:.*|image: $(DOCKER_IMAGE):$(DOCKER_TAG)|' kubernetes/manifests/deployment.yaml
+	@kubectl apply -f kubernetes/manifests/deployment.yaml -n default
+	@echo "Deployment complete with tag: $(DOCKER_TAG)"

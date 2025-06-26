@@ -129,3 +129,9 @@ This project is licensed under the Apache License 2.0 - see the LICENSE file for
 
 
 gcloud artifacts repositories add-iam-policy-binding iris-repo --location=us-central1 --member="serviceAccount:xxxxxxx-compute@developer.gserviceaccount.com" … --role="roles/artifactregistry.reader"
+
+
+
+----
+To find the value of app-config.container-image-tag
+> kubectl get configmap app-config -n user-sandboxes -o yaml
