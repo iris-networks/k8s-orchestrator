@@ -33,6 +33,12 @@ func (c *Client) createDeployment(ctx context.Context, userID string) error {
 		c.getUserDataVolume(userID),
 	}
 
+	// Get image tag from configmap
+	imageTag, err := c.getImageTagFromConfigMap(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get image tag from configmap: %v", err)
+	}
+
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: deploymentName,
@@ -66,11 +72,11 @@ func (c *Client) createDeployment(ctx context.Context, userID string) error {
 							Command: []string{
 								"sh",
 								"-c",
-								"mkdir -p /home/nodeuser/.iris /home/vncuser/.config & chmod -R 777 /home/nodeuser/.iris & chmod -R 777 /home/vncuser/.config & rm -f /home/vncuser/.config/chromium/Singleton* & rm -rf /home/nodeuser/.iris/user-data/Single* & wait",
+								"chmod -R 777 /config && rm -f /config/.config/chromium/Singleton* && wait",
 							},
 							VolumeMounts: c.getUserDataVolumeMounts(),
 							SecurityContext: &corev1.SecurityContext{
-								RunAsUser: func() *int64 { 
+								RunAsUser: func() *int64 {
 									var uid int64 = 0 // Run as root to set permissions
 									return &uid
 								}(),
@@ -80,7 +86,7 @@ func (c *Client) createDeployment(ctx context.Context, userID string) error {
 					Containers: []corev1.Container{
 						{
 							Name:  "sandbox",
-							Image: "us-central1-docker.pkg.dev/driven-seer-460401-p9/iris-repo/iris_agent:latest",
+							Image: fmt.Sprintf("us-central1-docker.pkg.dev/driven-seer-460401-p9/iris-repo/iris_agent:%s", imageTag),
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Ports: []corev1.ContainerPort{
 								{
@@ -111,11 +117,11 @@ func (c *Client) createDeployment(ctx context.Context, userID string) error {
 										Port: intstr.FromInt(3000),
 									},
 								},
-								InitialDelaySeconds: 1,
-								TimeoutSeconds:      5,
+								InitialDelaySeconds: 3,
+								TimeoutSeconds:      2,
 								PeriodSeconds:       3,
 								SuccessThreshold:    1,
-								FailureThreshold:    4,
+								FailureThreshold:    10,
 							},
 							ReadinessProbe: &corev1.Probe{
 								ProbeHandler: corev1.ProbeHandler{
@@ -138,6 +144,21 @@ func (c *Client) createDeployment(ctx context.Context, userID string) error {
 		},
 	}
 
-	_, err := c.clientset.AppsV1().Deployments(c.namespace).Create(ctx, deployment, metav1.CreateOptions{})
+	_, err = c.clientset.AppsV1().Deployments(c.namespace).Create(ctx, deployment, metav1.CreateOptions{})
 	return err
+}
+
+// getImageTagFromConfigMap retrieves the container image tag from the app-config configmap
+func (c *Client) getImageTagFromConfigMap(ctx context.Context) (string, error) {
+	configMap, err := c.clientset.CoreV1().ConfigMaps("user-sandboxes").Get(ctx, "app-config", metav1.GetOptions{})
+	if err != nil {
+		return "latest", fmt.Errorf("failed to get configmap: %v", err)
+	}
+
+	imageTag, exists := configMap.Data["container-image-tag"]
+	if !exists {
+		return "latest", fmt.Errorf("container-image-tag not found in configmap")
+	}
+
+	return imageTag, nil
 }

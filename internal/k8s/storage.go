@@ -60,16 +60,7 @@ func (c *Client) getUserDataVolumeMounts() []corev1.VolumeMount {
 	return []corev1.VolumeMount{
 		{
 			Name:      "user-data",
-			MountPath: "/home/nodeuser/.iris",
-		},
-		{
-			Name:      "user-data",
-			MountPath: "/home/vncuser/.config",
-		},
-		{
-			Name:      "user-data",
-			MountPath: "/home/vncuser/.config/chromium",
-			SubPath:   "chromium-data",
+			MountPath: "/config",
 		},
 	}
 }
