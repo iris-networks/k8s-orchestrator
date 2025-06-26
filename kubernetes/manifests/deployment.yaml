@@ -17,7 +17,7 @@ spec:
       serviceAccountName: k8sgo-sa
       containers:
       - name: k8sgo
-        image: us-central1-docker.pkg.dev/driven-seer-460401-p9/k8sgo-repo/irisk8s:20250627-035139-e6cd8b7
+        image: us-central1-docker.pkg.dev/driven-seer-460401-p9/k8sgo-repo/irisk8s:a593b09
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
