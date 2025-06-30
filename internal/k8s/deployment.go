@@ -88,6 +88,11 @@ func (c *Client) createDeployment(ctx context.Context, userID string) error {
 							Name:  "sandbox",
 							Image: fmt.Sprintf("us-central1-docker.pkg.dev/driven-seer-460401-p9/iris-repo/iris_agent:%s", imageTag),
 							ImagePullPolicy: corev1.PullIfNotPresent,
+							SecurityContext: &corev1.SecurityContext{
+								SeccompProfile: &corev1.SeccompProfile{
+									Type: corev1.SeccompProfileTypeUnconfined,
+								},
+							},
 							Ports: []corev1.ContainerPort{
 								{
 									ContainerPort: 6901,
