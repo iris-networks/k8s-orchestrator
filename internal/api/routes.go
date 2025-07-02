@@ -2,12 +2,13 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/shanurcsenitap/irisk8s/internal/config"
 	"github.com/shanurcsenitap/irisk8s/internal/k8s"
 )
 
 
 // RegisterRoutes registers all API routes with the Kubernetes client
-func RegisterRoutes(router *gin.Engine, k8sClient *k8s.ClientWithTraefik) {
+func RegisterRoutes(router *gin.Engine, k8sClient *k8s.ClientWithTraefik, appConfig *config.Configuration) {
 	// Create handlers
 	sandboxHandler := NewSandboxHandler(k8sClient)
 
@@ -20,6 +21,7 @@ func RegisterRoutes(router *gin.Engine, k8sClient *k8s.ClientWithTraefik) {
 
 	// API v1 routes
 	v1 := router.Group("/v1")
+	v1.Use(AuthMiddleware(appConfig))
 	{
 		// Sandbox endpoints
 		sandbox := v1.Group("/sandbox")

@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	_ "github.com/shanurcsenitap/irisk8s/docs"
 	"github.com/shanurcsenitap/irisk8s/internal/api"
+	"github.com/shanurcsenitap/irisk8s/internal/config"
 	"github.com/shanurcsenitap/irisk8s/internal/k8s"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -19,6 +20,9 @@ import (
 
 
 func main() {
+	// Get application configuration
+	appConfig := config.GetConfig()
+
 	// Initialize Kubernetes client with Traefik support
 	k8sClient, err := k8s.NewClientWithTraefik()
 	if err != nil {
@@ -32,7 +36,7 @@ func main() {
 	router := gin.Default()
 
 	// Register routes
-	api.RegisterRoutes(router, k8sClient)
+	api.RegisterRoutes(router, k8sClient, appConfig)
 
 	// Swagger documentation
 	url := ginSwagger.URL("/swagger/doc.json") // The URL pointing to API definition

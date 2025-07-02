@@ -15,5 +15,7 @@
 // @host      api.tryiris.dev
 // @BasePath  /v1
 //
-// @securityDefinitions.basic  BasicAuth
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name X-API-KEY
 package docs
