@@ -1,4 +1,4 @@
-.PHONY: build clean test run swagger docker-build docker-push artifact-auth docker-all create-artifact-repo deploy update-secret-and-redeploy
+.PHONY: build clean test run swagger docker-build docker-push artifact-auth docker-all create-artifact-repo deploy create-secret
 
 # Variables
 APP_NAME := k8sgo
@@ -83,8 +83,30 @@ deploy:
 	@kubectl apply -f kubernetes/manifests/deployment.yaml -n default
 	@echo "Deployment complete with tag: $(DOCKER_TAG)"
 
-# Update secret and redeploy
-update-secret-and-redeploy:
-	@echo "Updating secret and redeploying..."
-	@kubectl apply -f kubernetes/manifests/secret.yaml -n default
-	@kubectl rollout restart deployment/k8sgo -n default
+# Create secret from .env file or provided values
+create-secret:
+	@if [ -f .env ]; then \
+		echo "Loading secrets from .env file..."; \
+		export $$(grep -v '^#' .env | xargs); \
+		if [ -z "$$API_KEY" ] || [ -z "$$SANDBOX_TIMEOUT_MINUTES" ]; then \
+			echo "Error: API_KEY and SANDBOX_TIMEOUT_MINUTES must be set in .env file"; \
+			exit 1; \
+		fi; \
+		echo "Creating/updating secret from .env values..."; \
+		kubectl delete secret k8sgo-secrets --ignore-not-found=true; \
+		kubectl create secret generic k8sgo-secrets \
+			--from-literal=API_KEY="$$API_KEY" \
+			--from-literal=SANDBOX_TIMEOUT_MINUTES="$$SANDBOX_TIMEOUT_MINUTES"; \
+	elif [ -n "$(API_KEY)" ] && [ -n "$(SANDBOX_TIMEOUT_MINUTES)" ]; then \
+		echo "Creating/updating secret with provided values..."; \
+		kubectl delete secret k8sgo-secrets --ignore-not-found=true; \
+		kubectl create secret generic k8sgo-secrets \
+			--from-literal=API_KEY=$(API_KEY) \
+			--from-literal=SANDBOX_TIMEOUT_MINUTES=$(SANDBOX_TIMEOUT_MINUTES); \
+	else \
+		echo "Error: Either create a .env file or provide API_KEY and SANDBOX_TIMEOUT_MINUTES"; \
+		echo "Usage: make create-secret API_KEY=your-key SANDBOX_TIMEOUT_MINUTES=30"; \
+		echo "Or create a .env file with these values"; \
+		exit 1; \
+	fi
+
