@@ -1,4 +1,4 @@
-.PHONY: build clean test run swagger docker-build docker-push artifact-auth docker-all create-artifact-repo deploy
+.PHONY: build clean test run swagger docker-build docker-push artifact-auth docker-all create-artifact-repo deploy update-secret-and-redeploy
 
 # Variables
 APP_NAME := k8sgo
@@ -82,3 +82,9 @@ deploy:
 	@sed -i '' 's|image: us-central1-docker.pkg.dev/driven-seer-460401-p9/k8sgo-repo/irisk8s:.*|image: $(DOCKER_IMAGE):$(DOCKER_TAG)|' kubernetes/manifests/deployment.yaml
 	@kubectl apply -f kubernetes/manifests/deployment.yaml -n default
 	@echo "Deployment complete with tag: $(DOCKER_TAG)"
+
+# Update secret and redeploy
+update-secret-and-redeploy:
+	@echo "Updating secret and redeploying..."
+	@kubectl apply -f kubernetes/manifests/secret.yaml -n default
+	@kubectl rollout restart deployment/k8sgo -n default

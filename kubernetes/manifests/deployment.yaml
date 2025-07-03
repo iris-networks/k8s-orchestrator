@@ -41,3 +41,10 @@ spec:
             port: http
           initialDelaySeconds: 5
           periodSeconds: 5
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/config
+      volumes:
+      - name: config-volume
+        secret:
+          secretName: k8sgo-secrets
