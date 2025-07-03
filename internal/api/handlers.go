@@ -31,6 +31,7 @@ func NewSandboxHandler(k8sClient *k8s.ClientWithTraefik) *SandboxHandler {
 // @Produce      json
 // @Success      200 {object} SandboxListResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     ApiKeyAuth
 // @Router       /v1/sandboxes [get]
 func (h *SandboxHandler) ListSandboxes(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -61,6 +62,7 @@ func (h *SandboxHandler) ListSandboxes(c *gin.Context) {
 // @Success      201 {object} SandboxResponse
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     ApiKeyAuth
 // @Router       /v1/sandbox/{userId} [post]
 func (h *SandboxHandler) CreateSandbox(c *gin.Context) {
 	userID := c.Param("userId")
@@ -122,6 +124,7 @@ func (h *SandboxHandler) CreateSandbox(c *gin.Context) {
 // @Success      200 {object} Response
 // @Failure      400 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     ApiKeyAuth
 // @Router       /v1/sandbox/{userId} [delete]
 func (h *SandboxHandler) DeleteSandbox(c *gin.Context) {
 	userID := c.Param("userId")
@@ -158,6 +161,7 @@ func (h *SandboxHandler) DeleteSandbox(c *gin.Context) {
 // @Failure      400 {object} ErrorResponse
 // @Failure      404 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     ApiKeyAuth
 // @Router       /v1/sandbox/{userId}/status [get]
 func (h *SandboxHandler) GetSandboxStatus(c *gin.Context) {
 	userID := c.Param("userId")
@@ -212,6 +216,7 @@ func (h *SandboxHandler) GetSandboxStatus(c *gin.Context) {
 // @Failure      400 {object} ErrorResponse
 // @Failure      401 {object} ErrorResponse
 // @Failure      500 {object} ErrorResponse
+// @Security     ApiKeyAuth
 // @Router       /v1/admin/cleanup [post]
 func (h *SandboxHandler) TriggerCleanup(c *gin.Context) {
 	// Get minutes from query parameter

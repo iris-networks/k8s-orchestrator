@@ -191,6 +191,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Trigger cleanup of old sandboxes with Traefik routing
       tags:
       - admin
@@ -221,6 +223,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Delete a user sandbox with Traefik routing
       tags:
       - sandbox
@@ -255,6 +259,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Create a user sandbox with Traefik routing
       tags:
       - sandbox
@@ -289,6 +295,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Get the status of a user sandbox with Traefik routing
       tags:
       - sandbox
@@ -308,6 +316,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/api.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: List all sandboxes with Traefik routing
       tags:
       - sandbox

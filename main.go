@@ -1,3 +1,11 @@
+// @title           Kubernetes Sandbox API
+// @version         1.0
+// @description     API for managing containerized sandboxes with Kubernetes and Traefik
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name X-API-KEY
+// @host            localhost:8080
+// @BasePath        /
 package main
 
 import (

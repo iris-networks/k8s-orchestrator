@@ -17,6 +17,11 @@ const docTemplate = `{
     "paths": {
         "/v1/admin/cleanup": {
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Deletes all sandboxes that have been running for more than the specified minutes",
                 "consumes": [
                     "application/json"
@@ -74,6 +79,11 @@ const docTemplate = `{
         },
         "/v1/sandbox/{userId}": {
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Creates a new containerized sandbox for a specific user with Traefik IngressRoutes",
                 "consumes": [
                     "application/json"
@@ -124,6 +134,11 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Deletes a containerized sandbox for a specific user including Traefik IngressRoutes",
                 "consumes": [
                     "application/json"
@@ -168,6 +183,11 @@ const docTemplate = `{
         },
         "/v1/sandbox/{userId}/status": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Retrieves the status of a sandbox for a specific user with Traefik IngressRoutes",
                 "consumes": [
                     "application/json"
@@ -218,6 +238,11 @@ const docTemplate = `{
         },
         "/v1/sandboxes": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "Retrieves a list of all sandboxes with their status",
                 "consumes": [
                     "application/json"

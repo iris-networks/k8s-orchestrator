@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 golang:1.21-alpine AS builder
+FROM --platform=linux/amd64 golang:1.23-alpine AS builder
 
 # Set working directory
 WORKDIR /app
