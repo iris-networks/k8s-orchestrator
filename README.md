@@ -11,6 +11,15 @@ This platform was built to:
 - Support educational and training scenarios requiring isolated workspaces
 - Facilitate safe web browsing in containerized environments
 
+## Similar Platforms
+
+This project shares similar goals with other cloud development environment platforms:
+
+- **[Daytona](https://www.daytona.io/)** - Open-source development environment manager that provides instant, secure, and standardized development environments
+- **[E2B](https://e2b.dev/)** - Cloud playground for AI agents and apps, offering sandboxed cloud environments for AI development and testing
+
+While these platforms focus primarily on development environments, this Kubernetes sandbox platform is specifically designed for security testing, training scenarios, and providing browser-accessible desktop environments with automatic cleanup.
+
 ## Exposed Ports
 
 - **API Server**: 8080 (container), mapped to 80 (service)
