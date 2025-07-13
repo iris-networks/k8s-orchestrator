@@ -72,7 +72,7 @@ func (c *Client) createDeployment(ctx context.Context, userID string) error {
 							Command: []string{
 								"sh",
 								"-c",
-								"chmod -R 777 /config && rm -f /config/.config/chromium/Singleton* && wait",
+								"chmod -R 777 /config && rm -f /config/browser/user-data/Singleton* && wait",
 							},
 							VolumeMounts: c.getUserDataVolumeMounts(),
 							SecurityContext: &corev1.SecurityContext{
@@ -111,8 +111,8 @@ func (c *Client) createDeployment(ctx context.Context, userID string) error {
 									corev1.ResourceMemory: resource.MustParse("4Gi"),
 								},
 								Requests: corev1.ResourceList{
-									corev1.ResourceCPU:    resource.MustParse("500m"),
-									corev1.ResourceMemory: resource.MustParse("2Gi"),
+									corev1.ResourceCPU:    resource.MustParse("1"),
+									corev1.ResourceMemory: resource.MustParse("4Gi"),
 								},
 							},
 							LivenessProbe: &corev1.Probe{
