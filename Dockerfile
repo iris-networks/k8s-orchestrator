@@ -1,41 +1,47 @@
-FROM --platform=linux/amd64 golang:1.24-alpine AS builder
+# syntax=docker/dockerfile:1
 
-# Set working directory
+# Define the target platform, default to linux/amd64
+ARG TARGETPLATFORM=linux/amd64
+
+# --- Builder Stage ---
+# Use the build platform to ensure native execution speed and compatibility for build tools.
+FROM --platform=$BUILDPLATFORM golang:1.24-alpine AS builder
+
 WORKDIR /app
 
-# Install required packages
+# Install git
 RUN apk add --no-cache git
 
-# Copy go.mod and go.sum files
+# Copy go module files
 COPY go.mod go.sum* ./
 
-# Download dependencies (if go.sum exists)
-RUN if [ -f go.sum ]; then go mod download; else go mod tidy; fi
+# Download dependencies
+RUN go mod download
 
-# Copy source code
+# Copy the rest of the source code
 COPY . .
 
-# Generate Swagger docs
+# Install swag and generate docs. This runs natively on the build machine.
 RUN go install github.com/swaggo/swag/cmd/swag@latest
-RUN swag init
+RUN /go/bin/swag init
 
-# Build the application with explicit GOOS and GOARCH for Linux AMD64
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -o k8sgo .
+# Cross-compile the application to the TARGETPLATFORM.
+ARG TARGETPLATFORM
+RUN CGO_ENABLED=0 GOOS=$(echo $TARGETPLATFORM | cut -d'/' -f1) GOARCH=$(echo $TARGETPLATFORM | cut -d'/' -f2) go build -a -o /k8sgo .
 
-# Create a minimal production image
-FROM --platform=linux/amd64 alpine:3.18
+# --- Final Stage ---
+# Create a minimal production image for the target platform.
+FROM --platform=$TARGETPLATFORM alpine:3.18
 
 # Install CA certificates for HTTPS
 RUN apk --no-cache add ca-certificates
 
-# Set working directory
 WORKDIR /app
 
-# Copy the binary from the builder stage
-COPY --from=builder /app/k8sgo .
+# Copy the cross-compiled binary and the generated docs from the builder stage
+COPY --from=builder /k8sgo .
+COPY --from=builder /app/docs ./docs
 
-# Expose port
 EXPOSE 8080
 
-# Run the binary
 CMD ["./k8sgo"]

@@ -31,6 +31,15 @@ func (c *Client) createDeployment(ctx context.Context, userID string) error {
 	// Get volumes for the pod from storage
 	volumes := []corev1.Volume{
 		c.getUserDataVolume(userID),
+		{
+			Name: "shm-volume",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{
+					Medium:    corev1.StorageMediumMemory,
+					SizeLimit: resource.NewQuantity(512*1024*1024, resource.BinarySI), // 512 MiB
+				},
+			},
+		},
 	}
 
 	// Get image tag from configmap
@@ -108,11 +117,11 @@ func (c *Client) createDeployment(ctx context.Context, userID string) error {
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
 									corev1.ResourceCPU:    resource.MustParse("1"),
-									corev1.ResourceMemory: resource.MustParse("4Gi"),
+									corev1.ResourceMemory: resource.MustParse("2Gi"),
 								},
 								Requests: corev1.ResourceList{
-									corev1.ResourceCPU:    resource.MustParse("1"),
-									corev1.ResourceMemory: resource.MustParse("4Gi"),
+									corev1.ResourceCPU:    resource.MustParse("500m"),
+									corev1.ResourceMemory: resource.MustParse("1Gi"),
 								},
 							},
 							LivenessProbe: &corev1.Probe{
