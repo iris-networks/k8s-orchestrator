@@ -17,7 +17,7 @@ spec:
       serviceAccountName: k8sgo-sa
       containers:
       - name: k8sgo
-        image: us-central1-docker.pkg.dev/driven-seer-460401-p9/k8sgo-repo/irisk8s:62c5031
+        image: us-central1-docker.pkg.dev/driven-seer-460401-p9/k8sgo-repo/irisk8s:48eb49a
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
@@ -44,6 +44,8 @@ spec:
         volumeMounts:
         - name: config-volume
           mountPath: /etc/config
+        - name: shm-volume
+          mountPath: /dev/shm
       volumes:
       - name: config-volume
         secret:
