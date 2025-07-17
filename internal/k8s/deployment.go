@@ -36,7 +36,7 @@ func (c *Client) createDeployment(ctx context.Context, userID string) error {
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{
 					Medium:    corev1.StorageMediumMemory,
-					SizeLimit: resource.NewQuantity(512*1024*1024, resource.BinarySI), // 512 MiB
+					SizeLimit: resource.NewQuantity(1024*1024*1024, resource.BinarySI), // 1 GiB
 				},
 			},
 		},
@@ -116,12 +116,12 @@ func (c *Client) createDeployment(ctx context.Context, userID string) error {
 							VolumeMounts: volumeMounts,
 							Resources: corev1.ResourceRequirements{
 								Limits: corev1.ResourceList{
-									corev1.ResourceCPU:    resource.MustParse("1"),
-									corev1.ResourceMemory: resource.MustParse("2Gi"),
+									corev1.ResourceCPU:    resource.MustParse("2"),
+									corev1.ResourceMemory: resource.MustParse("4Gi"),
 								},
 								Requests: corev1.ResourceList{
-									corev1.ResourceCPU:    resource.MustParse("500m"),
-									corev1.ResourceMemory: resource.MustParse("1Gi"),
+									corev1.ResourceCPU:    resource.MustParse("1"),
+									corev1.ResourceMemory: resource.MustParse("2Gi"),
 								},
 							},
 							LivenessProbe: &corev1.Probe{
